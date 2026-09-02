@@ -1,0 +1,3 @@
+import { NextResponse } from "next/server";
+import { addInquiry } from "@/lib/store";
+export async function POST(request: Request) { const f = await request.formData(); const email = String(f.get("email") || "").trim(); const message = String(f.get("message") || "").trim(); if (!email.includes("@") || !message) return NextResponse.json({ error: "Invalid inquiry" }, { status: 400 }); await addInquiry({ id: crypto.randomUUID(), name: String(f.get("name") || ""), email, company: String(f.get("company") || ""), country: String(f.get("country") || ""), product: String(f.get("product") || ""), quantity: String(f.get("quantity") || ""), message, createdAt: new Date().toISOString() }); return NextResponse.json({ ok: true }); }
