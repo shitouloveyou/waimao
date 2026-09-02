@@ -9,6 +9,8 @@
 - 英文响应式首页、产品分类与产品展示
 - 在线询价表单，询盘自动进入管理后台
 - 中文后台：新增、删除、编辑产品及价格、MOQ、状态和描述
+- 后台上传或更换产品图片（JPG、PNG、WebP，最大 5MB）
+- 后台修改公司名称、邮箱、WhatsApp、微信及首页介绍
 - 管理员密码登录与签名会话 Cookie
 - GitHub + Render 部署配置
 
@@ -34,13 +36,15 @@ npm run dev
 4. 在 Render 环境变量中确认已经设置：
    - `ADMIN_PASSWORD`：后台密码
    - `SESSION_SECRET`：随机长字符串
-   - `DATA_DIR`：持久化数据目录
+- `DATA_DIR`：持久化数据目录
 
 网站会通过 `npm ci && npm run build` 构建，通过 `npm start` 启动。
 
 ## 数据保存说明
 
 产品与询盘默认写入 `DATA_DIR/store.json`。Render 免费实例的文件系统在重新部署后可能被重置；测试阶段可以使用，正式运营时建议挂载 Render Persistent Disk，或改接 PostgreSQL/Supabase。迁移到普通服务器时可直接把 `DATA_DIR` 指向服务器上的持久目录。
+
+后台上传的产品图片保存在 `DATA_DIR/uploads`。免费实例重新部署或重启后可能清空这些上传图片，正式运营前建议使用持久磁盘或迁移服务器。
 
 ## 上线前需要替换
 
