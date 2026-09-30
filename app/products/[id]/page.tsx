@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, MessageCircle } from "lucide-react";
 import { notFound } from "next/navigation";
-import { getProduct, getProducts, getSettings } from "@/lib/store";
+import { getPublicProduct, getPublicProducts, getSettings } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const product = await getProduct((await params).id);
+  const product = await getPublicProduct((await params).id);
   if (!product) return {};
   return {
     title: `${product.name} | Wholesale & OEM`,
@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function ProductPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const product = await getProduct((await params).id);
+  const product = await getPublicProduct((await params).id);
   if (!product) notFound();
   const settings = await getSettings();
   const incoming = await searchParams;
@@ -47,5 +47,5 @@ export default async function ProductPage({ params, searchParams }: { params: Pr
 }
 
 export async function generateStaticParams() {
-  return (await getProducts()).map(product => ({ id: product.id }));
+  return (await getPublicProducts()).map(product => ({ id: product.id }));
 }

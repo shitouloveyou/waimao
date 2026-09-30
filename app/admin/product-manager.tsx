@@ -1,0 +1,38 @@
+"use client";
+
+import { ArrowDown, ArrowUp, Copy, Eye, ImageUp, Plus, Save, Star, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { Product } from "@/lib/types";
+
+export default function ProductManager({ initialProducts }: { initialProducts: Product[] }) {
+  const [products, setProducts] = useState(initialProducts);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+  const [uploading, setUploading] = useState("");
+  const [message, setMessage] = useState("");
+  const visible = useMemo(() => products.map((product, index) => ({ product, index })).filter(({ product }) => {
+    const matchesSearch = `${product.name} ${product.category} ${product.sku || ""}`.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = status === "all" || (status === "live" ? product.active !== false : product.active === false);
+    return matchesSearch && matchesStatus;
+  }), [products, search, status]);
+
+  function update<K extends keyof Product>(index: number, key: K, value: Product[K]) { setProducts(items => items.map((item, i) => i === index ? { ...item, [key]: value } : item)); }
+  function move(index: number, direction: -1 | 1) { const target = index + direction; if (target < 0 || target >= products.length) return; setProducts(items => { const next = [...items]; [next[index], next[target]] = [next[target], next[index]]; return next; }); }
+  function duplicate(index: number) { const source = products[index]; const copy = { ...source, id: `${source.id}-copy-${Date.now().toString().slice(-5)}`, name: `${source.name} Copy`, active: false, featured: false }; setProducts(items => [...items.slice(0, index + 1), copy, ...items.slice(index + 1)]); }
+  function completeness(product: Product) { return Math.round([product.image, product.name, product.category, product.description, product.material, product.moq, product.blade, product.size, product.applications, product.features, product.customization, product.leadTime].filter(Boolean).length / 12 * 100); }
+  async function save(next = products) { try { const response = await fetch("/api/admin/products", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next) }); if (!response.ok) throw new Error(); setMessage("产品资料已保存"); } catch { setMessage("保存失败，请检查登录状态并重试"); } }
+  async function upload(index: number, file?: File) { if (!file) return; setUploading(products[index].id); const data = new FormData(); data.append("image", file); const response = await fetch("/api/admin/upload", { method: "POST", body: data }); if (response.ok) { const { url } = await response.json(); const next = products.map((product, i) => i === index ? { ...product, image: url, imagePosition: undefined } : product); setProducts(next); await save(next); } else setMessage("图片上传失败，请使用不超过 5MB 的 JPG、PNG 或 WebP"); setUploading(""); }
+  function add() { setProducts(items => [...items, { id: `product-${Date.now()}`, name: "New Scissor Product", category: "Scissors", material: "", price: "Request quote", moq: "", status: "Request Quote", description: "", active: false, featured: false }]); }
+
+  return <div className="product-manager">
+    <header><div><small>PRODUCT MANAGEMENT</small><h1>产品库与独立详情页</h1><p>新产品默认下架，资料确认完成后再上架到首页。</p></div><div><button className="add" onClick={add}><Plus /> 添加产品</button><button className="save" onClick={() => save()}><Save /> 保存全部</button></div></header>
+    <div className="product-tools"><input value={search} onChange={event => setSearch(event.target.value)} placeholder="搜索产品名称、分类或 SKU" /><select value={status} onChange={event => setStatus(event.target.value)}><option value="all">全部产品</option><option value="live">已上架</option><option value="draft">已下架</option></select><span>共 {products.length} 个 · 上架 {products.filter(product => product.active !== false).length} 个</span></div>
+    {message && <p className="admin-notice" role="status">{message}</p>}
+    <div className="admin-products">{visible.map(({ product: p, index: i }) => <article key={p.id}>
+      <div className="admin-card-head"><div><b>产品 {String(i + 1).padStart(2, "0")} · {p.name}</b><span className={`publish-badge ${p.active === false ? "draft" : "live"}`}>{p.active === false ? "已下架" : "已上架"}</span><small>资料完整度 {completeness(p)}%</small></div><div className="product-card-actions"><button title="上移" disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp /></button><button title="下移" disabled={i === products.length - 1} onClick={() => move(i, 1)}><ArrowDown /></button><button title="复制" onClick={() => duplicate(i)}><Copy /></button><button title="删除" onClick={() => confirm(`确定删除 ${p.name}？`) && setProducts(items => items.filter((_, n) => n !== i))}><Trash2 /></button></div></div>
+      <div className="product-publish-controls"><label><input type="checkbox" checked={p.active !== false} onChange={event => update(i, "active", event.target.checked)} /> 在前台展示</label><label><input type="checkbox" checked={Boolean(p.featured)} onChange={event => update(i, "featured", event.target.checked)} /><Star /> 首页优先推荐</label>{p.active !== false && <a href={`/products/${p.id}`} target="_blank"><Eye /> 预览详情页</a>}</div>
+      <div className="product-upload"><div className="image-preview">{p.image ? <img src={p.image} alt="产品预览" /> : <ImageUp />}</div><label className="upload-button"><ImageUp /> {uploading === p.id ? "上传中..." : "上传/更换真实产品图"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading === p.id} onChange={event => upload(i, event.target.files?.[0])} /></label><small>建议 1200×1200 以上，JPG/PNG/WebP，最大 5MB</small></div>
+      <div className="admin-grid"><label>产品英文名称<input value={p.name} onChange={event => update(i, "name", event.target.value)} /></label><label>产品编号 / SKU<input value={p.sku || ""} onChange={event => update(i, "sku", event.target.value)} /></label><label>分类<input value={p.category} onChange={event => update(i, "category", event.target.value)} /></label><label>价格 / 询价显示<input value={p.price} onChange={event => update(i, "price", event.target.value)} /></label><label>最小起订量<input value={p.moq} onChange={event => update(i, "moq", event.target.value)} /></label><label>主体材质<input value={p.material} onChange={event => update(i, "material", event.target.value)} /></label><label>状态<select value={p.status} onChange={event => update(i, "status", event.target.value as Product["status"])}><option>In Stock</option><option>Made to Order</option><option>Request Quote</option></select></label><label>刀刃 / 刃口<input value={p.blade || ""} onChange={event => update(i, "blade", event.target.value)} /></label><label>尺寸<input value={p.size || ""} onChange={event => update(i, "size", event.target.value)} /></label><label>交期<input value={p.leadTime || ""} onChange={event => update(i, "leadTime", event.target.value)} /></label><label className="wide">英文介绍<textarea value={p.description} onChange={event => update(i, "description", event.target.value)} /></label><label className="wide">适用客户/场景（英文）<textarea value={p.applications || ""} onChange={event => update(i, "applications", event.target.value)} /></label><label className="wide">卖点（英文，用 | 分隔）<textarea value={p.features || ""} onChange={event => update(i, "features", event.target.value)} placeholder="Sharp blade|Comfort grip|Retail-ready packaging" /></label><label className="wide">OEM 可定制内容（英文）<textarea value={p.customization || ""} onChange={event => update(i, "customization", event.target.value)} /></label></div>
+    </article>)}</div>
+  </div>;
+}

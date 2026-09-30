@@ -14,12 +14,14 @@ const defaultSettings: SiteSettings = { companyName: "ForgeNova Cutting Tools", 
 type Data = { products: Product[]; inquiries: Inquiry[]; settings: SiteSettings };
 const dataDir = process.env.DATA_DIR || path.join(process.cwd(), "data");
 const dataFile = path.join(dataDir, "store.json");
-async function read(): Promise<Data> { try { const data = JSON.parse(await fs.readFile(dataFile, "utf8")); const source:Product[] = Array.isArray(data.products) ? data.products : defaults; const products = source.map((product:Product) => ({ ...product, image: product.image || defaults.find(item => item.id === product.id)?.image })); return { products, inquiries: data.inquiries || [], settings: { ...defaultSettings, ...(data.settings || {}) } }; } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; return { products: defaults, inquiries: [], settings: defaultSettings }; } }
+async function read(): Promise<Data> { try { const data = JSON.parse(await fs.readFile(dataFile, "utf8")); const source:Product[] = Array.isArray(data.products) ? data.products : defaults; const products = source.map((product:Product) => ({ active: true, featured: false, ...product, image: product.image || defaults.find(item => item.id === product.id)?.image })); return { products, inquiries: data.inquiries || [], settings: { ...defaultSettings, ...(data.settings || {}) } }; } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; return { products: defaults.map(product => ({ active: true, featured: false, ...product })), inquiries: [], settings: defaultSettings }; } }
 async function write(data: Data) { await fs.mkdir(dataDir, { recursive: true }); await fs.copyFile(dataFile, `${dataFile}.bak`).catch(error => { if (error.code !== "ENOENT") throw error; }); const temp = `${dataFile}.${crypto.randomUUID()}.tmp`; await fs.writeFile(temp, JSON.stringify(data, null, 2)); await fs.rename(temp, dataFile); }
 let pending: Promise<unknown> = Promise.resolve();
 function mutate(change: (data: Data) => void) { const next = pending.then(async () => { const data = await read(); change(data); await write(data); }); pending = next.catch(() => {}); return next; }
 export async function getProducts() { return (await read()).products; }
 export async function getProduct(id: string) { return (await read()).products.find(product => product.id === id); }
+export async function getPublicProducts() { return (await read()).products.filter(product => product.active !== false).sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured))); }
+export async function getPublicProduct(id: string) { return (await read()).products.find(product => product.id === id && product.active !== false); }
 export async function getInquiries() { return (await read()).inquiries; }
 export async function getSettings() { return (await read()).settings; }
 export async function saveProducts(products: Product[]) { return mutate(data => { data.products = products; }); }

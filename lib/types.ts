@@ -15,6 +15,9 @@ export type Product = {
   features?: string;
   customization?: string;
   leadTime?: string;
+  sku?: string;
+  active?: boolean;
+  featured?: boolean;
 };
 
 export type Inquiry = {
