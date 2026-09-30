@@ -3,6 +3,7 @@ import "./globals.css";
 import Tracking from "./tracking";
 import AnalyticsPixels from "./analytics-pixels";
 import { getSettings } from "@/lib/store";
+import CookieConsent from "./cookie-consent";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.SITE_URL || "https://example.com"),
@@ -24,7 +25,7 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased"><AnalyticsPixels settings={await getSettings()} /><Tracking />{children}</body>
+      <body className="antialiased"><AnalyticsPixels settings={await getSettings()} /><Tracking />{children}<CookieConsent /></body>
     </html>
   );
 }
