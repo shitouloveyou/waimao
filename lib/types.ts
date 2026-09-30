@@ -25,6 +25,7 @@ export type Inquiry = {
   country: string;
   product: string;
   quantity: string;
+  requestType?: string;
   message: string;
   source?: string;
   landingPage?: string;

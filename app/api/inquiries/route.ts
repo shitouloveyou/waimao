@@ -13,7 +13,7 @@ async function notify(inquiry: Inquiry) {
   if (!apiKey || !recipient || recipient.endsWith("@example.com")) return;
   const fields = [
     ["Name", inquiry.name], ["Email", inquiry.email], ["Company", inquiry.company], ["Country", inquiry.country],
-    ["Product", inquiry.product], ["Quantity", inquiry.quantity], ["Message", inquiry.message], ["UTM source", inquiry.utmSource],
+    ["Request type", inquiry.requestType], ["Product", inquiry.product], ["Quantity", inquiry.quantity], ["Message", inquiry.message], ["UTM source", inquiry.utmSource],
     ["UTM medium", inquiry.utmMedium], ["UTM campaign", inquiry.utmCampaign], ["Landing page", inquiry.landingPage],
   ];
   const response = await fetch("https://api.resend.com/emails", {
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   const inquiry: Inquiry = {
     id: crypto.randomUUID(), name: clean(form.get("name"), 120), email,
     company: clean(form.get("company"), 160), country: clean(form.get("country"), 120),
-    product: clean(form.get("product"), 200), quantity: clean(form.get("quantity"), 120), message,
+    product: clean(form.get("product"), 200), quantity: clean(form.get("quantity"), 120), requestType: clean(form.get("requestType"), 80) || "Wholesale quote", message,
     source: clean(form.get("source"), 500), landingPage: clean(form.get("landingPage"), 800),
     utmSource: clean(form.get("utmSource"), 200), utmMedium: clean(form.get("utmMedium"), 200),
     utmCampaign: clean(form.get("utmCampaign"), 200), createdAt: new Date().toISOString(),
