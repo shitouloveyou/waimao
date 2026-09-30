@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ForgeNova Hardware | Precision Hardware Supply",
-  description: "Reliable fasteners, fittings and custom metal components for distributors and industrial buyers worldwide.",
+  metadataBase: new URL(process.env.SITE_URL || "https://example.com"),
+  title: { default: "ForgeNova Cutting Tools | Wholesale Scissors & OEM", template: "%s | ForgeNova Cutting Tools" },
+  description: "Wholesale scissors, shears and professional cutting tools for distributors, retailers and private-label brands.",
+  keywords: ["wholesale scissors", "scissors manufacturer", "OEM scissors", "private label scissors", "cutting tools supplier"],
+  openGraph: { type: "website", title: "ForgeNova Cutting Tools", description: "Wholesale scissors and OEM cutting tools from China.", images: ["/scissors-catalog.png"] },
+  twitter: { card: "summary_large_image", title: "ForgeNova Cutting Tools", description: "Wholesale scissors and OEM cutting tools from China.", images: ["/scissors-catalog.png"] },
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

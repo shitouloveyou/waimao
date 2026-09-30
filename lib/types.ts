@@ -1,3 +1,47 @@
-export type Product = { id: string; name: string; category: string; material: string; price: string; moq: string; status: "In Stock" | "Made to Order" | "Request Quote"; description: string; image?: string };
-export type Inquiry = { id: string; name: string; email: string; company: string; country: string; product: string; quantity: string; message: string; createdAt: string };
-export type SiteSettings = { companyName: string; email: string; whatsapp: string; wechat: string; about: string };
+export type Product = {
+  id: string;
+  name: string;
+  category: string;
+  material: string;
+  price: string;
+  moq: string;
+  status: "In Stock" | "Made to Order" | "Request Quote";
+  description: string;
+  image?: string;
+  imagePosition?: string;
+  blade?: string;
+  size?: string;
+  applications?: string;
+  features?: string;
+  customization?: string;
+  leadTime?: string;
+};
+
+export type Inquiry = {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  country: string;
+  product: string;
+  quantity: string;
+  message: string;
+  source?: string;
+  landingPage?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  createdAt: string;
+};
+
+export type SiteSettings = {
+  companyName: string;
+  email: string;
+  whatsapp: string;
+  wechat: string;
+  about: string;
+  tagline?: string;
+  instagram?: string;
+  facebook?: string;
+  tiktok?: string;
+};
