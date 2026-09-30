@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { addInquiry, getSettings } from "@/lib/store";
 import type { Inquiry } from "@/lib/types";
+import { recordEvent } from "@/lib/operations";
 
 const clean = (value: FormDataEntryValue | null, max = 500) => String(value || "").trim().slice(0, max);
 const escapeHtml = (value: string) => value.replace(/[&<>"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character] || character);
@@ -15,7 +16,7 @@ async function notify(inquiry: Inquiry) {
     ["Product", inquiry.product], ["Quantity", inquiry.quantity], ["Message", inquiry.message], ["UTM source", inquiry.utmSource],
     ["UTM medium", inquiry.utmMedium], ["UTM campaign", inquiry.utmCampaign], ["Landing page", inquiry.landingPage],
   ];
-  await fetch("https://api.resend.com/emails", {
+  const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -26,6 +27,7 @@ async function notify(inquiry: Inquiry) {
       html: `<h2>New website inquiry</h2>${fields.map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value || "—")}</p>`).join("")}`,
     }),
   });
+  if (!response.ok) throw new Error("Email provider rejected notification");
 }
 
 export async function POST(request: Request) {
@@ -43,6 +45,7 @@ export async function POST(request: Request) {
     utmCampaign: clean(form.get("utmCampaign"), 200), createdAt: new Date().toISOString(),
   };
   await addInquiry(inquiry);
+  await recordEvent({ type: "inquiry", visitor: clean(form.get("visitor")), page: inquiry.product, source: inquiry.utmSource || inquiry.source || "Direct", campaign: inquiry.utmCampaign || "", createdAt: inquiry.createdAt }).catch(console.error);
   try { await notify(inquiry); } catch (error) { console.error("Inquiry email notification failed", error); }
   return NextResponse.json({ ok: true });
 }

@@ -12,6 +12,8 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState("");
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [tracking, setTracking] = useState<Record<string, string>>({});
   const categories = ["All", ...Array.from(new Set(initialProducts.map(product => product.category)))];
   const products = useMemo(() => category === "All" ? initialProducts : initialProducts.filter(product => product.category === category), [category, initialProducts]);
@@ -30,9 +32,18 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
   }, []);
 
   async function submit(formData: FormData) {
-    Object.entries(tracking).forEach(([key, value]) => formData.set(key, value));
-    const response = await fetch("/api/inquiries", { method: "POST", body: formData });
-    if (response.ok) setSent(true);
+    if (busy) return;
+    setBusy(true); setSubmitError("");
+    try {
+      let attribution = tracking;
+      try { attribution = JSON.parse(sessionStorage.getItem("fn_attribution") || JSON.stringify(tracking)); } catch {}
+      Object.entries(attribution).forEach(([key, value]) => formData.set(key, String(value)));
+      formData.set("visitor", sessionStorage.getItem("fn_visitor") || "");
+      const response = await fetch("/api/inquiries", { method: "POST", body: formData });
+      if (!response.ok) throw new Error("Please check your email and enter at least five characters in requirements.");
+      setSent(true);
+    } catch (error) { setSubmitError(error instanceof Error ? error.message : "Unable to send. Please try again."); }
+    finally { setBusy(false); }
   }
 
   const imageStyle = (product: Product) => product.image ? {
@@ -42,6 +53,8 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
   } : undefined;
 
   return <main>
+    {submitError && <div className="form-feedback" role="alert">{submitError}</div>}
+    {busy && <div className="form-feedback" role="status">Sending your inquiry…</div>}
     <header className="nav">
       <a className="brand" href="#top"><span>FN</span><b>{settings.companyName.toUpperCase()}</b><small>SCISSORS & CUTTING TOOLS</small></a>
       <nav className={menu ? "open" : ""}>

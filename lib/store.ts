@@ -14,12 +14,15 @@ const defaultSettings: SiteSettings = { companyName: "ForgeNova Cutting Tools", 
 type Data = { products: Product[]; inquiries: Inquiry[]; settings: SiteSettings };
 const dataDir = process.env.DATA_DIR || path.join(process.cwd(), "data");
 const dataFile = path.join(dataDir, "store.json");
-async function read(): Promise<Data> { try { const data = JSON.parse(await fs.readFile(dataFile, "utf8")); const source:Product[] = Array.isArray(data.products) ? data.products : defaults; const products = source.map((product:Product) => ({ ...product, image: product.image || defaults.find(item => item.id === product.id)?.image })); return { products, inquiries: data.inquiries || [], settings: { ...defaultSettings, ...(data.settings || {}) } }; } catch { const initial = { products: defaults, inquiries: [], settings: defaultSettings }; await fs.mkdir(dataDir, { recursive: true }); await fs.writeFile(dataFile, JSON.stringify(initial, null, 2)); return initial; } }
-async function write(data: Data) { await fs.mkdir(dataDir, { recursive: true }); const temp = `${dataFile}.tmp`; await fs.writeFile(temp, JSON.stringify(data, null, 2)); await fs.rename(temp, dataFile); }
+async function read(): Promise<Data> { try { const data = JSON.parse(await fs.readFile(dataFile, "utf8")); const source:Product[] = Array.isArray(data.products) ? data.products : defaults; const products = source.map((product:Product) => ({ ...product, image: product.image || defaults.find(item => item.id === product.id)?.image })); return { products, inquiries: data.inquiries || [], settings: { ...defaultSettings, ...(data.settings || {}) } }; } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; return { products: defaults, inquiries: [], settings: defaultSettings }; } }
+async function write(data: Data) { await fs.mkdir(dataDir, { recursive: true }); await fs.copyFile(dataFile, `${dataFile}.bak`).catch(error => { if (error.code !== "ENOENT") throw error; }); const temp = `${dataFile}.${crypto.randomUUID()}.tmp`; await fs.writeFile(temp, JSON.stringify(data, null, 2)); await fs.rename(temp, dataFile); }
+let pending: Promise<unknown> = Promise.resolve();
+function mutate(change: (data: Data) => void) { const next = pending.then(async () => { const data = await read(); change(data); await write(data); }); pending = next.catch(() => {}); return next; }
 export async function getProducts() { return (await read()).products; }
 export async function getProduct(id: string) { return (await read()).products.find(product => product.id === id); }
 export async function getInquiries() { return (await read()).inquiries; }
 export async function getSettings() { return (await read()).settings; }
-export async function saveProducts(products: Product[]) { const data = await read(); data.products = products; await write(data); }
-export async function saveSettings(settings: SiteSettings) { const data = await read(); data.settings = settings; await write(data); }
-export async function addInquiry(inquiry: Inquiry) { const data = await read(); data.inquiries.unshift(inquiry); await write(data); }
+export async function saveProducts(products: Product[]) { return mutate(data => { data.products = products; }); }
+export async function saveSettings(settings: SiteSettings) { return mutate(data => { data.settings = settings; }); }
+export async function addInquiry(inquiry: Inquiry) { return mutate(data => { data.inquiries.unshift(inquiry); }); }
+export async function updateInquiry(id: string, changes: Partial<Inquiry>) { return mutate(data => { const inquiry = data.inquiries.find(item => item.id === id); if (inquiry) Object.assign(inquiry, changes); }); }

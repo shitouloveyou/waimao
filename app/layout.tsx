@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Tracking from "./tracking";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.SITE_URL || "https://example.com"),
@@ -21,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased"><Tracking />{children}</body>
     </html>
   );
 }

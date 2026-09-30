@@ -32,6 +32,9 @@ export type Inquiry = {
   utmMedium?: string;
   utmCampaign?: string;
   createdAt: string;
+  stage?: string;
+  notes?: string;
+  followUp?: string;
 };
 
 export type SiteSettings = {
