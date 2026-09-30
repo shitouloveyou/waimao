@@ -48,6 +48,13 @@ export type Inquiry = {
   stage?: string;
   notes?: string;
   followUp?: string;
+  priority?: "高" | "中" | "低";
+  customerType?: string;
+  whatsapp?: string;
+  tags?: string;
+  dealValue?: number;
+  dealCurrency?: string;
+  lastContactAt?: string;
   attachmentUrl?: string;
   attachmentName?: string;
 };
