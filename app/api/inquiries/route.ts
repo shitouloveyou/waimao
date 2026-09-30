@@ -4,6 +4,7 @@ import type { Inquiry } from "@/lib/types";
 import { recordEvent } from "@/lib/operations";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { clientAddress, rateLimit } from "@/lib/rate-limit";
 
 const clean = (value: FormDataEntryValue | null, max = 500) => String(value || "").trim().slice(0, max);
 const escapeHtml = (value: string) => value.replace(/[&<>"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character] || character);
@@ -33,6 +34,8 @@ async function notify(inquiry: Inquiry) {
 }
 
 export async function POST(request: Request) {
+  const throttle = rateLimit(`inquiry:${clientAddress(request)}`, 6, 60 * 60 * 1000);
+  if (!throttle.allowed) return NextResponse.json({ error: "Too many inquiries. Please try again later." }, { status: 429, headers: { "Retry-After": String(throttle.retryAfter) } });
   const form = await request.formData();
   if (clean(form.get("website"))) return NextResponse.json({ ok: true });
   const email = clean(form.get("email"), 200);

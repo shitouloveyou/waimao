@@ -23,9 +23,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = await getSettings();
+  const organization = { "@context": "https://schema.org", "@type": "Organization", name: settings.companyName, url: process.env.SITE_URL || "https://example.com", email: settings.email, description: settings.about, sameAs: [settings.instagram, settings.facebook, settings.tiktok].filter(Boolean) };
   return (
     <html lang="en">
-      <body className="antialiased"><AnalyticsPixels settings={await getSettings()} /><Tracking />{children}<CookieConsent /></body>
+      <body className="antialiased"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organization).replace(/</g, "\\u003c") }} /><AnalyticsPixels settings={settings} /><Tracking />{children}<CookieConsent /></body>
     </html>
   );
 }

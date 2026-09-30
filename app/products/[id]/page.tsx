@@ -36,8 +36,9 @@ export default async function ProductPage({ params, searchParams }: { params: Pr
   const whatsapp = settings.whatsapp.startsWith("http") ? `${settings.whatsapp}${settings.whatsapp.includes("?") ? "&" : "?"}text=${encodeURIComponent(`Hello, I would like a quote for ${product.name}${product.sku ? ` (SKU: ${product.sku})` : ""}. ${process.env.SITE_URL ? `${process.env.SITE_URL}/products/${product.id}` : ""}`)}` : quoteUrl;
   const images = [product.image, ...(product.images || [])].filter((image, index, items): image is string => Boolean(image) && items.indexOf(image) === index);
   const related = allProducts.filter(item => item.id !== product.id && item.category === product.category).slice(0, 3);
+  const productSchema = { "@context": "https://schema.org", "@type": "Product", name: product.name, description: product.description, sku: product.sku || product.id, category: product.category, material: product.material, image: images.map(image => image.startsWith("http") ? image : `${process.env.SITE_URL || "https://example.com"}${image}`), brand: { "@type": "Brand", name: settings.companyName } };
 
-  return <main className="detail-page">
+  return <main className="detail-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(productSchema).replace(/</g,"\\u003c")}}/>
     <header className="detail-nav"><Link href="/"><ArrowLeft /> Back to products</Link><b>{settings.companyName}</b><Link className="detail-quote" href={quoteUrl}>Request quote</Link></header>
     <section className="detail-hero">
       <ProductGallery images={images} name={product.name} initialPosition={product.imagePosition} />

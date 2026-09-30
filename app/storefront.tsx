@@ -67,7 +67,7 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
     <header className="nav">
       <a className="brand" href="#top"><span>FN</span><b>{settings.companyName.toUpperCase()}</b><small>SCISSORS & CUTTING TOOLS</small></a>
       <nav className={menu ? "open" : ""}>
-        <a href="#products">Products</a><a href="#capabilities">OEM Service</a><a href="#content">Why Us</a><a href="#about">About</a><a className="nav-quote" href="#quote">Request a Quote</a>
+        <a href="#products">Products</a><a href="#capabilities">OEM Service</a><a href="#content">Why Us</a><Link href="/faq">FAQ</Link><a href="#about">About</a><a className="nav-quote" href="#quote">Request a Quote</a>
       </nav>
       <button className="menu" aria-label="Toggle navigation" onClick={() => setMenu(!menu)}>{menu ? <X /> : <Menu />}</button>
     </header>
