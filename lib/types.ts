@@ -66,4 +66,10 @@ export type SiteSettings = {
   legalName?: string;
   address?: string;
   businessHours?: string;
+  companyImages?: string[];
+  certifications?: string;
+  tradeTerms?: string;
+  paymentTerms?: string;
+  exportMarkets?: string;
+  qualityProcess?: string;
 };

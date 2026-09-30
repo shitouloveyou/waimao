@@ -34,6 +34,9 @@ export default function Operations({ events, inquiries, products, settings, read
     ["后台强密码", readiness.secureAdminPassword, "在服务器设置新的 ADMIN_PASSWORD"],
     ["登录会话密钥", readiness.secureSession, "在服务器设置随机 SESSION_SECRET"],
     ["访问或广告统计", Boolean(settings.googleAnalyticsId || settings.metaPixelId || settings.tiktokPixelId), "至少配置一个统计平台"],
+    ["公司 Logo", Boolean(settings.logo), "在网站设置中上传正式 Logo"],
+    ["公司主体信息", Boolean(settings.legalName && settings.address), "填写法定公司名和地址"],
+    ["公司实力信息", Boolean(settings.companyImages?.length && (settings.qualityProcess || settings.certifications)), "上传真实照片并填写质检或认证信息"],
     ["已上架产品", activeProducts.length >= 3, "建议至少准备 3 个完整产品"],
     ["独立产品图片", activeProducts.some(item => item.image && item.image !== "/scissors-catalog.png"), "上传真实产品主图和细节图"],
   ] as const;

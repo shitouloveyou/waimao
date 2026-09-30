@@ -6,6 +6,7 @@ import { ArrowRight, Check, Facebook, Instagram, Mail, Menu, MessageCircle, Pack
 import type { Product, SiteSettings } from "@/lib/types";
 import { categorySlug } from "@/lib/slug";
 import BrandMark from "./brand-mark";
+import CompanyProof from "./company-proof";
 
 const socialIcon = (name: string) => name === "Instagram" ? <Instagram /> : name === "Facebook" ? <Facebook /> : <span className="tiktok-mark">TK</span>;
 
@@ -111,6 +112,7 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
 
     <div className="reference-upload"><div><b>Have a drawing or reference product?</b><span>Optional: attach one JPG, PNG, WebP or PDF file, up to 8MB.</span></div><input form="inquiry-form" type="file" name="attachment" accept="image/jpeg,image/png,image/webp,application/pdf" /><button type="button" onClick={()=>document.querySelector<HTMLFormElement>("#inquiry-form")?.requestSubmit()}>Submit with attachment</button></div>
 
+    <CompanyProof settings={settings}/>
     <div className="mobile-contact-bar"><a href="#quote">Get a Quote</a><a href={settings.whatsapp.startsWith("http") ? settings.whatsapp : "#quote"}><MessageCircle /> WhatsApp</a></div>
 
     <footer><a className="brand light" href="#top"><BrandMark settings={settings}/><b>{settings.companyName.toUpperCase()}</b><small>TOOLS & HARDWARE</small></a><p>{settings.legalName||settings.companyName}{settings.address?` · ${settings.address}`:""}</p><div><a href="#products">Products</a><Link href="/catalog">Catalog</Link><Link href="/faq">FAQ</Link><a href="#quote">Request Quote</a><Link href="/privacy">Privacy</Link><a href="/admin">Admin</a></div><small>© 2026 {settings.legalName||settings.companyName}. All rights reserved.{settings.businessHours?` · ${settings.businessHours}`:""}</small></footer>
