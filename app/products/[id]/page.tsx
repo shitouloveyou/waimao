@@ -4,6 +4,8 @@ import { ArrowLeft, ArrowRight, Check, MessageCircle, Play } from "lucide-react"
 import { notFound } from "next/navigation";
 import { getPublicProduct, getPublicProducts, getSettings } from "@/lib/store";
 import ProductGallery from "./product-gallery";
+import ShareButton from "./share-button";
+import { categorySlug } from "@/lib/slug";
 
 export const dynamic = "force-dynamic";
 
@@ -11,9 +13,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const product = await getPublicProduct((await params).id);
   if (!product) return {};
   return {
-    title: `${product.name} | Wholesale & OEM`,
-    description: product.description,
-    openGraph: { title: product.name, description: product.description, images: product.image ? [product.image] : [] },
+    title: product.seoTitle || `${product.name} | Wholesale & OEM`,
+    description: product.seoDescription || product.description,
+    alternates: { canonical: `/products/${product.id}` },
+    openGraph: { title: product.seoTitle || product.name, description: product.seoDescription || product.description, images: [product.image, ...(product.images || [])].filter((image): image is string => Boolean(image)) },
   };
 }
 
@@ -40,9 +43,10 @@ export default async function ProductPage({ params, searchParams }: { params: Pr
 
   return <main className="detail-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(productSchema).replace(/</g,"\\u003c")}}/>
     <header className="detail-nav"><Link href="/"><ArrowLeft /> Back to products</Link><b>{settings.companyName}</b><Link className="detail-quote" href={quoteUrl}>Request quote</Link></header>
+    <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href={`/categories/${categorySlug(product.category)}`}>{product.category}</Link><span>/</span><b>{product.name}</b></nav>
     <section className="detail-hero">
-      <ProductGallery images={images} name={product.name} initialPosition={product.imagePosition} />
-      <div className="detail-copy"><span className="kicker">{product.category}</span><h1>{product.name}</h1><p>{product.description}</p><div className="detail-actions"><Link className="primary" href={quoteUrl}>Request a quotation <ArrowRight /></Link><Link className="sample-button" href={sampleUrl}>Request a sample</Link><a className="whatsapp-button" href={whatsapp}><MessageCircle /> WhatsApp</a>{product.videoUrl&&<a className="video-button" href={product.videoUrl} target="_blank" rel="noreferrer"><Play/> Watch video</a>}</div><small>Samples, private label and packaging options available.</small></div>
+      <ProductGallery images={images} name={product.name} initialPosition={product.imagePosition} imageAlt={product.imageAlt} />
+      <div className="detail-copy"><span className="kicker">{product.category}</span><h1>{product.name}</h1><p>{product.description}</p><div className="detail-actions"><Link className="primary" href={quoteUrl}>Request a quotation <ArrowRight /></Link><Link className="sample-button" href={sampleUrl}>Request a sample</Link><a className="whatsapp-button" href={whatsapp}><MessageCircle /> WhatsApp</a>{product.videoUrl&&<a className="video-button" href={product.videoUrl} target="_blank" rel="noreferrer"><Play/> Watch video</a>}</div><div className="detail-meta"><small>Samples, private label and packaging options available.</small><ShareButton title={product.name}/></div></div>
     </section>
     <section className="spec-section"><div><span className="kicker">PRODUCT SPECIFICATION</span><h2>Technical details for buyer review.</h2>{product.sku && <p className="detail-sku">SKU: {product.sku}</p>}</div><dl>{product.model&&<div><dt>Model</dt><dd>{product.model}</dd></div>}<div><dt>Material</dt><dd>{product.material}</dd></div>{product.blade&&<div><dt>Blade / Finish</dt><dd>{product.blade}</dd></div>}<div><dt>Size / Spec</dt><dd>{product.size || "Custom options"}</dd></div><div><dt>MOQ</dt><dd>{product.moq}</dd></div>{product.packaging&&<div><dt>Packaging</dt><dd>{product.packaging}</dd></div>}{product.certification&&<div><dt>Standard</dt><dd>{product.certification}</dd></div>}<div><dt>Lead time</dt><dd>{product.leadTime || "Confirm with quote"}</dd></div><div><dt>Applications</dt><dd>{product.applications || "Wholesale and retail programs"}</dd></div>{extraSpecifications.map(([name,value])=><div key={name}><dt>{name}</dt><dd>{value}</dd></div>)}</dl></section>
     <section className="feature-section"><div><span className="kicker">OEM & PRIVATE LABEL</span><h2>Adapt it to your market.</h2><p>{product.customization || "Logo, color and packaging can be developed around your sales channel."}</p></div><ul>{features.map(feature => <li key={feature}><Check />{feature}</li>)}<li><Check />Pre-production sample confirmation</li><li><Check />Export-ready packing and inspection</li></ul></section>

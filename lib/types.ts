@@ -24,6 +24,9 @@ export type Product = {
   certification?: string;
   specifications?: string;
   videoUrl?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  imageAlt?: string;
 };
 
 export type Inquiry = {
