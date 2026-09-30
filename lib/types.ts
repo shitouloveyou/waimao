@@ -8,6 +8,7 @@ export type Product = {
   status: "In Stock" | "Made to Order" | "Request Quote";
   description: string;
   image?: string;
+  images?: string[];
   imagePosition?: string;
   blade?: string;
   size?: string;
@@ -43,6 +44,8 @@ export type Inquiry = {
   stage?: string;
   notes?: string;
   followUp?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
 };
 
 export type SiteSettings = {
