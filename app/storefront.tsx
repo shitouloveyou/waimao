@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Check, Facebook, Instagram, Mail, Menu, MessageCircle, PackageCheck, Scissors, ShieldCheck, X } from "lucide-react";
 import type { Product, SiteSettings } from "@/lib/types";
 import { categorySlug } from "@/lib/slug";
+import BrandMark from "./brand-mark";
 
 const socialIcon = (name: string) => name === "Instagram" ? <Instagram /> : name === "Facebook" ? <Facebook /> : <span className="tiktok-mark">TK</span>;
 
@@ -65,7 +66,7 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
     {submitError && <div className="form-feedback" role="alert">{submitError}</div>}
     {busy && <div className="form-feedback" role="status">Sending your inquiry…</div>}
     <header className="nav">
-      <a className="brand" href="#top"><span>FN</span><b>{settings.companyName.toUpperCase()}</b><small>SCISSORS & CUTTING TOOLS</small></a>
+      <a className="brand" href="#top"><BrandMark settings={settings}/><b>{settings.companyName.toUpperCase()}</b><small>TOOLS & HARDWARE</small></a>
       <nav className={menu ? "open" : ""}>
         <a href="#products">Products</a><a href="#capabilities">OEM Service</a><a href="#content">Why Us</a><Link href="/faq">FAQ</Link><a href="#about">About</a><a className="nav-quote" href="#quote">Request a Quote</a>
       </nav>
@@ -112,6 +113,6 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
 
     <div className="mobile-contact-bar"><a href="#quote">Get a Quote</a><a href={settings.whatsapp.startsWith("http") ? settings.whatsapp : "#quote"}><MessageCircle /> WhatsApp</a></div>
 
-    <footer><a className="brand light" href="#top"><span>FN</span><b>{settings.companyName.toUpperCase()}</b><small>SCISSORS & CUTTING TOOLS</small></a><p>Wholesale scissors and OEM cutting tools from China.</p><div><a href="#products">Products</a><a href="#quote">Request Quote</a><a href="/admin">Admin</a></div><small>© 2026 {settings.companyName}. All rights reserved.</small></footer>
+    <footer><a className="brand light" href="#top"><BrandMark settings={settings}/><b>{settings.companyName.toUpperCase()}</b><small>TOOLS & HARDWARE</small></a><p>{settings.legalName||settings.companyName}{settings.address?` · ${settings.address}`:""}</p><div><a href="#products">Products</a><Link href="/catalog">Catalog</Link><Link href="/faq">FAQ</Link><a href="#quote">Request Quote</a><Link href="/privacy">Privacy</Link><a href="/admin">Admin</a></div><small>© 2026 {settings.legalName||settings.companyName}. All rights reserved.{settings.businessHours?` · ${settings.businessHours}`:""}</small></footer>
   </main>;
 }

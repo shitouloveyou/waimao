@@ -62,4 +62,8 @@ export type SiteSettings = {
   googleAnalyticsId?: string;
   metaPixelId?: string;
   tiktokPixelId?: string;
+  logo?: string;
+  legalName?: string;
+  address?: string;
+  businessHours?: string;
 };

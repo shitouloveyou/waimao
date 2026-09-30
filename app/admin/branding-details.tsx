@@ -1,0 +1,10 @@
+"use client";
+
+import { ImageUp } from "lucide-react";
+import type { Dispatch, SetStateAction } from "react";
+import type { SiteSettings } from "@/lib/types";
+
+export default function BrandingDetails({ settings, setSettings }: { settings: SiteSettings; setSettings: Dispatch<SetStateAction<SiteSettings>> }) {
+  async function upload(file?: File) { if (!file) return; const data = new FormData(); data.append("image", file); const response = await fetch("/api/admin/upload", { method: "POST", body: data }); if (!response.ok) return alert("Logo 上传失败，请使用不超过 5MB 的 JPG、PNG 或 WebP"); const { url } = await response.json(); setSettings(value => ({ ...value, logo: url })); }
+  return <div className="settings-card branding-details"><h2>公司名称与 Logo</h2><p>Logo 会显示在网站导航和产品目录。建议使用透明背景的正方形或横版图片。</p><div className="logo-editor"><div className="logo-preview">{settings.logo ? <img src={settings.logo} alt="Logo 预览" /> : <span>{settings.companyName.split(/\s+/).map(word=>word[0]).join("").slice(0,2).toUpperCase()||"FN"}</span>}</div><label className="upload-button"><ImageUp /> 上传 / 更换 Logo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={event=>upload(event.target.files?.[0])}/></label>{settings.logo&&<button onClick={()=>setSettings(value=>({...value,logo:""}))}>移除 Logo</button>}<small>推荐透明 PNG 或 WebP，至少 300×300px，最大 5MB</small></div><div className="admin-grid"><label>品牌显示名称<input value={settings.companyName} onChange={event=>setSettings({...settings,companyName:event.target.value})} placeholder="ForgeNova Hardware" /></label><label>法定公司英文名称<input value={settings.legalName||""} onChange={event=>setSettings({...settings,legalName:event.target.value})} placeholder="Company legal name" /></label><label className="wide">公司/办公地址（英文）<input value={settings.address||""} onChange={event=>setSettings({...settings,address:event.target.value})} placeholder="City, Province, China" /></label><label>服务时间（英文）<input value={settings.businessHours||""} onChange={event=>setSettings({...settings,businessHours:event.target.value})} placeholder="Mon–Fri, 09:00–18:00 GMT+8" /></label></div><p className="settings-reminder">修改后请点击页面上方的“保存设置”。</p></div>;
+}
