@@ -75,7 +75,7 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
     <section className="hero scissors-hero" id="top">
       <div className="hero-bg" />
       <div className="hero-copy">
-        <div className="eyebrow">TOOLS · HARDWARE · OEM PRIVATE LABEL</div>
+        <div className="eyebrow">EASTERN CRAFT · GLOBAL HARDWARE · OEM</div>
         <h1>{settings.tagline || "Hardware products engineered for your market."}</h1>
         <p>Wholesale scissors, hand tools and hardware products for distributors, retailers and private-label brands. Product matching, packaging and inspection coordinated from China.</p>
         <div className="hero-actions"><a className="primary" href="#products">Explore Products <ArrowRight /></a><Link className="ghost" href="/catalog">View Catalog</Link><a className="ghost" href="#quote">Start an OEM Project</a></div>
