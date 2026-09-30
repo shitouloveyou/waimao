@@ -23,6 +23,7 @@ export type Product = {
   packaging?: string;
   certification?: string;
   specifications?: string;
+  videoUrl?: string;
 };
 
 export type Inquiry = {
