@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Check, Facebook, Instagram, Mail, Menu, MessageCircle, PackageCheck, Scissors, ShieldCheck, X } from "lucide-react";
 import type { Product, SiteSettings } from "@/lib/types";
+import { categorySlug } from "@/lib/slug";
 
 const socialIcon = (name: string) => name === "Instagram" ? <Instagram /> : name === "Facebook" ? <Facebook /> : <span className="tiktok-mark">TK</span>;
 
 export default function Storefront({ initialProducts, settings }: { initialProducts: Product[]; settings: SiteSettings }) {
   const [menu, setMenu] = useState(false);
   const [category, setCategory] = useState("All");
+  const [productSearch, setProductSearch] = useState("");
   const [selected, setSelected] = useState("");
   const [requestType, setRequestType] = useState("Wholesale quote");
   const [sent, setSent] = useState(false);
@@ -17,7 +19,7 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
   const [submitError, setSubmitError] = useState("");
   const [tracking, setTracking] = useState<Record<string, string>>({});
   const categories = ["All", ...Array.from(new Set(initialProducts.map(product => product.category)))];
-  const products = useMemo(() => category === "All" ? initialProducts : initialProducts.filter(product => product.category === category), [category, initialProducts]);
+  const products = useMemo(() => initialProducts.filter(product => (category === "All" || product.category === category) && `${product.name} ${product.category} ${product.sku || ""} ${product.material}`.toLowerCase().includes(productSearch.toLowerCase())), [category, productSearch, initialProducts]);
   const socials = [["Instagram", settings.instagram], ["Facebook", settings.facebook], ["TikTok", settings.tiktok]].filter((item): item is [string, string] => Boolean(item[1]));
 
   useEffect(() => {
@@ -89,7 +91,9 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
 
     <section className="section" id="products">
       <div className="section-head"><div><span className="kicker">PRODUCT PROGRAM</span><h2>Find the right hardware product for your channel.</h2></div><p>Start with a proven model or send your target specification. Scissors, tools and other hardware can be adapted for retail, professional or promotional programs.</p></div>
+      <div className="store-search"><input value={productSearch} onChange={event=>setProductSearch(event.target.value)} placeholder="Search by product, category, SKU or material..."/><span>{products.length} products found</span></div>
       <div className="filters">{categories.map(item => <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}</button>)}</div>
+      <div className="category-links"><span>Browse category pages:</span>{categories.filter(item=>item!=="All").map(item=><Link href={`/categories/${categorySlug(item)}`} key={item}>{item}</Link>)}</div>
       <div className="products">{products.map((product) => <article className="product" key={product.id}>
         <Link href={`/products/${product.id}`} className="product-art" style={imageStyle(product)} aria-label={`View ${product.name}`}><span>{String(initialProducts.findIndex(item => item.id === product.id) + 1).padStart(2, "0")}</span></Link>
         <div className="product-body"><span className="product-category">{product.category}</span><h3><Link href={`/products/${product.id}`}>{product.name}</Link></h3><p>{product.description}</p><dl><div><dt>Material</dt><dd>{product.material}</dd></div><div><dt>MOQ</dt><dd>{product.moq}</dd></div></dl><div className="product-foot"><b>{product.price}</b><Link href={`/products/${product.id}`}>Details <ArrowRight /></Link></div></div>
