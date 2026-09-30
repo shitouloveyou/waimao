@@ -72,9 +72,9 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
     <section className="hero scissors-hero" id="top">
       <div className="hero-bg" />
       <div className="hero-copy">
-        <div className="eyebrow">SCISSORS · SHEARS · OEM PRIVATE LABEL</div>
-        <h1>{settings.tagline || "Scissors engineered for your market."}</h1>
-        <p>Wholesale scissors and professional cutting tools for distributors, retailers and private-label brands. Product matching, packaging and inspection coordinated from China.</p>
+        <div className="eyebrow">TOOLS · HARDWARE · OEM PRIVATE LABEL</div>
+        <h1>{settings.tagline || "Hardware products engineered for your market."}</h1>
+        <p>Wholesale scissors, hand tools and hardware products for distributors, retailers and private-label brands. Product matching, packaging and inspection coordinated from China.</p>
         <div className="hero-actions"><a className="primary" href="#products">Explore Products <ArrowRight /></a><a className="ghost" href="#quote">Start an OEM Project</a></div>
         <div className="markets"><span>Built for</span><b>Distributors</b><b>Retail Brands</b><b>Industrial Buyers</b></div>
       </div>
@@ -87,7 +87,7 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
     </section>
 
     <section className="section" id="products">
-      <div className="section-head"><div><span className="kicker">PRODUCT PROGRAM</span><h2>Find the right cutting tool for your channel.</h2></div><p>Start with a proven model or send your target specification. Every product can be adapted for retail, professional or promotional programs.</p></div>
+      <div className="section-head"><div><span className="kicker">PRODUCT PROGRAM</span><h2>Find the right hardware product for your channel.</h2></div><p>Start with a proven model or send your target specification. Scissors, tools and other hardware can be adapted for retail, professional or promotional programs.</p></div>
       <div className="filters">{categories.map(item => <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}</button>)}</div>
       <div className="products">{products.map((product) => <article className="product" key={product.id}>
         <Link href={`/products/${product.id}`} className="product-art" style={imageStyle(product)} aria-label={`View ${product.name}`}><span>{String(initialProducts.findIndex(item => item.id === product.id) + 1).padStart(2, "0")}</span></Link>

@@ -18,6 +18,10 @@ export type Product = {
   sku?: string;
   active?: boolean;
   featured?: boolean;
+  model?: string;
+  packaging?: string;
+  certification?: string;
+  specifications?: string;
 };
 
 export type Inquiry = {
