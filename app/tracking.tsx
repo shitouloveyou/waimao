@@ -15,6 +15,10 @@ export default function Tracking() {
     const attribution = JSON.parse(sessionStorage.getItem("fn_attribution") || "{}");
     function send(type: string) { void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type, visitor, page: pathname, source: attribution.utmSource || attribution.source || "Direct", campaign: attribution.utmCampaign || "" }), keepalive: true }).catch(() => {}); }
     send("view");
+    const win = window as typeof window & { gtag?: (...args: unknown[]) => void; fbq?: (...args: unknown[]) => void; ttq?: { page?: () => void } };
+    win.gtag?.("event", "page_view", { page_path: pathname, page_location: location.href });
+    win.fbq?.("track", "PageView");
+    win.ttq?.page?.();
     const listener = (event: MouseEvent) => {
       const link = (event.target as Element).closest("a");
       if (!link) return;

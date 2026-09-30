@@ -48,4 +48,7 @@ export type SiteSettings = {
   instagram?: string;
   facebook?: string;
   tiktok?: string;
+  googleAnalyticsId?: string;
+  metaPixelId?: string;
+  tiktokPixelId?: string;
 };

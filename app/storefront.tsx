@@ -44,6 +44,10 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
       const response = await fetch("/api/inquiries", { method: "POST", body: formData });
       if (!response.ok) throw new Error("Please check your email and enter at least five characters in requirements.");
       setSent(true);
+      const win = window as typeof window & { gtag?: (...args: unknown[]) => void; fbq?: (...args: unknown[]) => void; ttq?: { track?: (...args: unknown[]) => void } };
+      win.gtag?.("event", "generate_lead", { request_type: requestType, product: selected });
+      win.fbq?.("track", "Lead", { request_type: requestType, content_name: selected });
+      win.ttq?.track?.("SubmitForm", { content_name: selected, description: requestType });
     } catch (error) { setSubmitError(error instanceof Error ? error.message : "Unable to send. Please try again."); }
     finally { setBusy(false); }
   }

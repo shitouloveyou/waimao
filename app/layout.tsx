@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Tracking from "./tracking";
+import AnalyticsPixels from "./analytics-pixels";
+import { getSettings } from "@/lib/store";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.SITE_URL || "https://example.com"),
@@ -15,14 +17,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased"><Tracking />{children}</body>
+      <body className="antialiased"><AnalyticsPixels settings={await getSettings()} /><Tracking />{children}</body>
     </html>
   );
 }
