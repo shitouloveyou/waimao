@@ -103,5 +103,9 @@ export type SalesOrder = {
   productionDue?: string;
   shippingDue?: string;
   notes?: string;
+  productCost?: number;
+  logisticsCost?: number;
+  otherCost?: number;
+  workflow?: Array<{ key: string; label: string; done: boolean; due?: string; owner?: string; notes?: string; completedAt?: string }>;
   createdAt: string;
 };

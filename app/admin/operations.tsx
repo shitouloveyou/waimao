@@ -1,11 +1,11 @@
 "use client";
 import { useState } from "react";
 import type { EventRecord } from "@/lib/operations";
-import type { Inquiry, Product, SiteSettings } from "@/lib/types";
+import type { Inquiry, Product, SalesOrder, SiteSettings } from "@/lib/types";
 
 export type DeploymentReadiness = { siteUrl: boolean; emailNotifications: boolean; secureAdminPassword: boolean; secureSession: boolean };
 
-export default function Operations({ events, inquiries, products, settings, readiness }: { events: EventRecord[]; inquiries: Inquiry[]; products: Product[]; settings: SiteSettings; readiness: DeploymentReadiness }) {
+export default function Operations({ events, inquiries, orders, products, settings, readiness }: { events: EventRecord[]; inquiries: Inquiry[]; orders: SalesOrder[]; products: Product[]; settings: SiteSettings; readiness: DeploymentReadiness }) {
   const [days, setDays] = useState("30");
   const [source, setSource] = useState("tiktok");
   const [campaign, setCampaign] = useState("cutting-test");
@@ -26,6 +26,10 @@ export default function Operations({ events, inquiries, products, settings, read
   views.forEach(event => { pages[event.page] = (pages[event.page] || 0) + 1; });
   const link = base ? base.replace(/\/$/, "") + (product ? "/products/" + product : "/") + "?utm_source=" + encodeURIComponent(source) + "&utm_medium=organic&utm_campaign=" + encodeURIComponent(campaign) : "";
   const activeProducts = products.filter(item => item.active !== false);
+  const today = new Date().toISOString().slice(0,10);
+  const followupsDue = inquiries.filter(item=>item.followUp&&item.followUp<=today&&!['已成交','无效'].includes(item.stage||"新询盘")).length;
+  const orderDelays = orders.filter(item=>!['已签收','已完成','暂停'].includes(item.stage)&&((item.productionDue&&item.productionDue<today)||(item.shippingDue&&item.shippingDue<today))).length;
+  const receivable = orders.filter(item=>(item.currency||"USD")==="USD").reduce((sum,item)=>sum+Math.max(0,item.amount-item.paid),0);
   const checks = [
     ["正式域名与 SITE_URL", readiness.siteUrl, "购买域名后在服务器设置 SITE_URL"],
     ["业务联系邮箱", Boolean(settings.email && !settings.email.endsWith("@example.com")), "在网站设置中填写正式邮箱"],
@@ -44,6 +48,7 @@ export default function Operations({ events, inquiries, products, settings, read
   return <div className="operations">
     <header><h1>运营中心</h1><select value={days} onChange={event => setDays(event.target.value)}><option value="7">最近7天</option><option value="30">最近30天</option><option value="90">最近90天</option></select></header>
     <div className="metrics">{[["页面浏览", views.length], ["访问会话", visitors], ["产品点击", clicks], ["WhatsApp 点击", whatsapp], ["有效提交", leads], ["询盘转化率", rate(leads)]].map(([label, value]) => <article key={label}><small>{label}</small><strong>{value}</strong></article>)}</div>
+    <div className="business-alerts"><article className={followupsDue?"warn":""}><small>到期客户跟进</small><b>{followupsDue}</b><span>{followupsDue?"请到客户管理处理":"目前没有到期任务"}</span></article><article className={orderDelays?"danger":""}><small>可能延期订单</small><b>{orderDelays}</b><span>{orderDelays?"请检查生产和发货计划":"订单计划正常"}</span></article><article className={receivable?"warn":""}><small>USD 未收余额</small><b>{receivable.toLocaleString()}</b><span>发货前核对付款条款</span></article></div>
     <p>产品点击率：{views.length ? (clicks / views.length * 100).toFixed(1) + "%" : "—"}（产品点击次数 ÷ 页面浏览次数）。访问会话按浏览器标签页识别，刷新会增加页面浏览；这不是社媒广告曝光点击率。统计从本次更新后开始。</p>
     <section className="readiness"><div className="readiness-head"><div><h2>正式上线准备度</h2><p>购买域名和迁移服务器前，按此清单逐项完成。</p></div><strong>{readinessScore}%</strong></div><div className="readiness-bar"><i style={{width:`${readinessScore}%`}}/></div><div className="readiness-list">{checks.map(([label,done,hint])=><div className={done?"done":"todo"} key={label}><b>{done?"✓":"!"}</b><span><strong>{label}</strong><small>{done?"已完成":hint}</small></span></div>)}</div></section>
     <div className="ops-columns"><article><h2>来源浏览量</h2>{Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,15).map(([name, count]) => <div className="metric-row" key={name}><span>{name}</span><b>{count}</b></div>)}</article><article><h2>热门页面</h2>{Object.entries(pages).sort((a,b) => b[1]-a[1]).slice(0,15).map(([name, count]) => <div className="metric-row" key={name}><span>{name}</span><b>{count}</b></div>)}</article></div>
