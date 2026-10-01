@@ -84,3 +84,24 @@ export type SiteSettings = {
   exportMarkets?: string;
   qualityProcess?: string;
 };
+
+export type SalesOrder = {
+  id: string;
+  orderNo: string;
+  customerId?: string;
+  customer: string;
+  currency: string;
+  amount: number;
+  paid: number;
+  stage: string;
+  productSummary: string;
+  incoterm: string;
+  paymentTerm: string;
+  destination: string;
+  forwarder?: string;
+  trackingNo?: string;
+  productionDue?: string;
+  shippingDue?: string;
+  notes?: string;
+  createdAt: string;
+};

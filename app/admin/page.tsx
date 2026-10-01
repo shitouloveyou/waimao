@@ -1,4 +1,4 @@
-import { getInquiries, getProducts, getSettings } from "@/lib/store";
+import { getInquiries, getOrders, getProducts, getSettings } from "@/lib/store";
 import { isAdmin } from "@/lib/auth";
 import AdminPanel from "./panel";
 import { getEvents } from "@/lib/operations";
@@ -14,5 +14,5 @@ export default async function Admin() {
     secureAdminPassword: Boolean(process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD !== "admin123"),
     secureSession: Boolean(process.env.SESSION_SECRET && process.env.SESSION_SECRET !== "change-this-session-secret"),
   };
-  return <AdminPanel initialAuthed={authed} events={authed ? await getEvents() : []} initialProducts={authed ? await getProducts() : []} inquiries={authed ? await getInquiries() : []} initialSettings={authed ? await getSettings() : { companyName: "", email: "", whatsapp: "", wechat: "", about: "" }} readiness={readiness} />;
+  return <AdminPanel initialAuthed={authed} events={authed ? await getEvents() : []} initialProducts={authed ? await getProducts() : []} inquiries={authed ? await getInquiries() : []} initialOrders={authed ? await getOrders() : []} initialSettings={authed ? await getSettings() : { companyName: "", email: "", whatsapp: "", wechat: "", about: "" }} readiness={readiness} />;
 }

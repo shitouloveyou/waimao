@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { Inquiry, Product, SiteSettings } from "./types";
+import type { Inquiry, Product, SalesOrder, SiteSettings } from "./types";
 
 const defaults: Product[] = [
   { id: "kitchen-shears", name: "Heavy-Duty Kitchen Shears", category: "Kitchen Scissors", material: "3Cr14 / 420J2 Stainless Steel", blade: "Micro-serrated edge", size: "8–9 in", price: "Request quote", moq: "500 pcs", status: "Made to Order", description: "Multi-purpose kitchen shears for poultry, herbs and food preparation, available with bottle opener and nutcracker functions.", applications: "Kitchen retail, cookware brands, supermarket private label", features: "Micro-serrated blade|Comfort-grip handle|Dishwasher-safe options", customization: "Logo, handle color, retail card, gift box", leadTime: "25–35 days", image: "/scissors-catalog.png", imagePosition: "0% 0%" },
@@ -12,10 +12,10 @@ const defaults: Product[] = [
 ];
 const defaultSettings: SiteSettings = { companyName: "ForgeNova Hardware", email: "sales@example.com", whatsapp: "Number to be added", wechat: "ID to be added", tagline: "Hardware products engineered for your market.", instagram: "", facebook: "", tiktok: "", about: "We help overseas distributors and brands source dependable scissors, hand tools and hardware products from China. One point of contact for product matching, private label packaging, quality inspection and export delivery." };
 function normalizeSettings(value: Partial<SiteSettings> = {}): SiteSettings { const settings = { ...defaultSettings, ...value }; if (settings.companyName === "ForgeNova Cutting Tools") settings.companyName = "ForgeNova Hardware"; if (settings.tagline === "Scissors engineered for your market.") settings.tagline = "Hardware products engineered for your market."; if (settings.about === "We help overseas distributors and brands source dependable scissors and cutting tools from China. One point of contact for product matching, private label packaging, quality inspection and export delivery.") settings.about = defaultSettings.about; return settings; }
-type Data = { products: Product[]; inquiries: Inquiry[]; settings: SiteSettings };
+type Data = { products: Product[]; inquiries: Inquiry[]; settings: SiteSettings; orders: SalesOrder[] };
 const dataDir = process.env.DATA_DIR || path.join(process.cwd(), "data");
 const dataFile = path.join(dataDir, "store.json");
-async function read(): Promise<Data> { try { const data = JSON.parse(await fs.readFile(dataFile, "utf8")); const source:Product[] = Array.isArray(data.products) ? data.products : defaults; const products = source.map((product:Product) => ({ active: true, featured: false, ...product, image: product.image || defaults.find(item => item.id === product.id)?.image })); return { products, inquiries: data.inquiries || [], settings: normalizeSettings(data.settings || {}) }; } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; return { products: defaults.map(product => ({ active: true, featured: false, ...product })), inquiries: [], settings: defaultSettings }; } }
+async function read(): Promise<Data> { try { const data = JSON.parse(await fs.readFile(dataFile, "utf8")); const source:Product[] = Array.isArray(data.products) ? data.products : defaults; const products = source.map((product:Product) => ({ active: true, featured: false, ...product, image: product.image || defaults.find(item => item.id === product.id)?.image })); return { products, inquiries: data.inquiries || [], settings: normalizeSettings(data.settings || {}), orders: data.orders || [] }; } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; return { products: defaults.map(product => ({ active: true, featured: false, ...product })), inquiries: [], settings: defaultSettings, orders: [] }; } }
 async function write(data: Data) { await fs.mkdir(dataDir, { recursive: true }); await fs.copyFile(dataFile, `${dataFile}.bak`).catch(error => { if (error.code !== "ENOENT") throw error; }); const temp = `${dataFile}.${crypto.randomUUID()}.tmp`; await fs.writeFile(temp, JSON.stringify(data, null, 2)); await fs.rename(temp, dataFile); }
 let pending: Promise<unknown> = Promise.resolve();
 function mutate(change: (data: Data) => void) { const next = pending.then(async () => { const data = await read(); change(data); await write(data); }); pending = next.catch(() => {}); return next; }
@@ -29,3 +29,6 @@ export async function saveProducts(products: Product[]) { return mutate(data => 
 export async function saveSettings(settings: SiteSettings) { return mutate(data => { data.settings = settings; }); }
 export async function addInquiry(inquiry: Inquiry) { return mutate(data => { data.inquiries.unshift(inquiry); }); }
 export async function updateInquiry(id: string, changes: Partial<Inquiry>) { return mutate(data => { const inquiry = data.inquiries.find(item => item.id === id); if (inquiry) Object.assign(inquiry, changes); }); }
+export async function getOrders() { return (await read()).orders; }
+export async function addOrder(order: SalesOrder) { return mutate(data => { data.orders.unshift(order); }); }
+export async function updateOrder(id: string, changes: Partial<SalesOrder>) { return mutate(data => { const order = data.orders.find(item => item.id === id); if (order) Object.assign(order, changes); }); }
