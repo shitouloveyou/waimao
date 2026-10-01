@@ -55,6 +55,7 @@ export type Inquiry = {
   dealValue?: number;
   dealCurrency?: string;
   lastContactAt?: string;
+  activities?: Array<{ id: string; date: string; type: string; content: string }>;
   attachmentUrl?: string;
   attachmentName?: string;
 };
