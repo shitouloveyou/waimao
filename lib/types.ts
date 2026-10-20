@@ -83,6 +83,14 @@ export type SiteSettings = {
   paymentTerms?: string;
   exportMarkets?: string;
   qualityProcess?: string;
+  heroVideos?: HeroVideo[];
+};
+
+export type HeroVideo = {
+  id: string;
+  url: string;
+  name: string;
+  enabled: boolean;
 };
 
 export type SalesOrder = {

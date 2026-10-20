@@ -7,6 +7,7 @@ import type { Product, SiteSettings } from "@/lib/types";
 import { categorySlug } from "@/lib/slug";
 import BrandMark from "./brand-mark";
 import CompanyProof from "./company-proof";
+import HeroMedia from "./hero-media";
 
 const socialIcon = (name: string) => name === "Instagram" ? <Instagram /> : name === "Facebook" ? <Facebook /> : <span className="tiktok-mark">TK</span>;
 
@@ -89,7 +90,7 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
     </header>
 
     <section className="hero scissors-hero" id="top">
-      <div className="hero-bg" />
+      <HeroMedia videos={settings.heroVideos} />
       <div className="hero-copy">
         <div className="eyebrow">EASTERN CRAFT · GLOBAL HARDWARE · OEM</div>
         <h1>{settings.tagline || "Hardware products engineered for your market."}</h1>
