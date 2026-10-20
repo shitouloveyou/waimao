@@ -11,7 +11,7 @@ const tiktok = (value = "") => /^[A-Z0-9]{10,30}$/i.test(value) ? value : "";
 
 export default function AnalyticsPixels({ settings }: { settings: SiteSettings }) {
   const [allowed, setAllowed] = useState(false);
-  useEffect(() => { const read = () => setAllowed(localStorage.getItem("fn_analytics_consent") === "accepted"); read(); addEventListener(consentEvent, read); return () => removeEventListener(consentEvent, read); }, []);
+  useEffect(() => { const read = () => setAllowed(localStorage.getItem("edgevora_analytics_consent") === "accepted"); read(); addEventListener(consentEvent, read); return () => removeEventListener(consentEvent, read); }, []);
   const gaId = ga(settings.googleAnalyticsId);
   const metaId = numeric(settings.metaPixelId);
   const tiktokId = tiktok(settings.tiktokPixelId);

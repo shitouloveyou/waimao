@@ -24,10 +24,15 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const settings = await getSettings();
+  const hasAnalytics = Boolean(
+    /^G-[A-Z0-9]+$/i.test(settings.googleAnalyticsId || "") ||
+    /^\d{5,30}$/.test(settings.metaPixelId || "") ||
+    /^[A-Z0-9]{10,30}$/i.test(settings.tiktokPixelId || ""),
+  );
   const organization = { "@context": "https://schema.org", "@type": "Organization", name: settings.legalName || settings.companyName, alternateName: settings.companyName, logo: settings.logo ? `${process.env.SITE_URL || "https://edgevoratools.com"}${settings.logo}` : undefined, url: process.env.SITE_URL || "https://edgevoratools.com", email: settings.email || undefined, address: settings.address, description: settings.about, sameAs: [settings.instagram, settings.facebook, settings.tiktok].filter(Boolean) };
   return (
     <html lang="en">
-      <body className="antialiased"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organization).replace(/</g, "\\u003c") }} /><AnalyticsPixels settings={settings} /><Tracking />{children}<CookieConsent /></body>
+      <body className="antialiased"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organization).replace(/</g, "\\u003c") }} /><AnalyticsPixels settings={settings} /><Tracking />{children}<CookieConsent enabled={hasAnalytics} /></body>
     </html>
   );
 }
