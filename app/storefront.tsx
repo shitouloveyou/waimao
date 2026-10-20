@@ -25,6 +25,7 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
   const [compare, setCompare] = useState<string[]>([]);
   const [basket, setBasket] = useState<Record<string, number>>({});
   const [toolPanel, setToolPanel] = useState<"basket"|"favorites"|"compare"|null>(null);
+  const [showToolDock, setShowToolDock] = useState(false);
   const categories = ["All", ...Array.from(new Set(initialProducts.map(product => product.category)))];
   const products = useMemo(() => initialProducts.filter(product => (category === "All" || product.category === category) && `${product.name} ${product.category} ${product.sku || ""} ${product.material}`.toLowerCase().includes(productSearch.toLowerCase())), [category, productSearch, initialProducts]);
   const socials = [["Instagram", settings.instagram], ["Facebook", settings.facebook], ["TikTok", settings.tiktok]].filter((item): item is [string, string] => Boolean(item[1]));
@@ -42,6 +43,12 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
     });
     document.querySelector<HTMLFormElement>(".quote form")?.setAttribute("id", "inquiry-form");
     try { setFavorites(JSON.parse(localStorage.getItem("fn_favorites")||"[]")); setCompare(JSON.parse(localStorage.getItem("fn_compare")||"[]")); setBasket(JSON.parse(localStorage.getItem("fn_basket")||"{}")); } catch {}
+  }, []);
+  useEffect(() => {
+    const updateDock = () => setShowToolDock(window.scrollY > 620);
+    updateDock();
+    window.addEventListener("scroll", updateDock, { passive: true });
+    return () => window.removeEventListener("scroll", updateDock);
   }, []);
   useEffect(()=>{localStorage.setItem("fn_favorites",JSON.stringify(favorites));},[favorites]);
   useEffect(()=>{localStorage.setItem("fn_compare",JSON.stringify(compare));},[compare]);
@@ -82,7 +89,7 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
     {submitError && <div className="form-feedback" role="alert">{submitError}</div>}
     {busy && <div className="form-feedback" role="status">Sending your inquiry…</div>}
     <header className="nav">
-      <a className="brand" href="#top"><BrandMark settings={settings}/><b>{settings.companyName.toUpperCase()}</b><small>TOOLS & HARDWARE</small></a>
+      <a className="brand" href="#top"><BrandMark settings={settings}/><b>{settings.companyName.toUpperCase()}</b><small>CUTTING TOOLS · OEM</small></a>
       <nav className={menu ? "open" : ""}>
         <a href="#products">Products</a><a href="#capabilities">OEM Service</a><a href="#content">Why Us</a><Link href="/faq">FAQ</Link><a href="#about">About</a><a className="nav-quote" href="#quote">Request a Quote</a>
       </nav>
@@ -92,10 +99,10 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
     <section className="hero scissors-hero" id="top">
       <HeroMedia videos={settings.heroVideos} />
       <div className="hero-copy">
-        <div className="eyebrow">EASTERN CRAFT · GLOBAL HARDWARE · OEM</div>
+        <div className="eyebrow">CUTTING TOOLS · PRIVATE LABEL · GLOBAL SUPPLY</div>
         <h1>{settings.tagline || "Hardware products engineered for your market."}</h1>
-        <p>Wholesale scissors, hand tools and hardware products for distributors, retailers and private-label brands. Product matching, packaging and inspection coordinated from China.</p>
-        <div className="hero-actions"><a className="primary" href="#products">Explore Products <ArrowRight /></a><Link className="ghost" href="/catalog">View Catalog</Link><a className="ghost" href="#quote">Start an OEM Project</a></div>
+        <p>Wholesale cutting tools for distributors and retail brands. Product selection, private-label packaging and inspection—all coordinated through one reliable point of contact.</p>
+        <div className="hero-actions"><a className="primary" href="#products">Explore Products <ArrowRight /></a><a className="ghost" href="#quote">Request a Quote</a></div>
         <div className="markets"><span>Built for</span><b>Distributors</b><b>Retail Brands</b><b>Industrial Buyers</b></div>
       </div>
     </section>
@@ -128,10 +135,10 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
     <div className="reference-upload"><div><b>Have a drawing or reference product?</b><span>Optional: attach one JPG, PNG, WebP or PDF file, up to 8MB.</span></div><input form="inquiry-form" type="file" name="attachment" accept="image/jpeg,image/png,image/webp,application/pdf" /><button type="button" onClick={()=>document.querySelector<HTMLFormElement>("#inquiry-form")?.requestSubmit()}>Submit with attachment</button></div>
 
     <CompanyProof settings={settings}/>
-    <div className="catalog-tool-dock"><button onClick={()=>setToolPanel("basket")}><ShoppingBasket/><span>RFQ List</span><i>{Object.keys(basket).length}</i></button><button onClick={()=>setToolPanel("compare")}><Scale/><span>Compare</span><i>{compare.length}</i></button><button onClick={()=>setToolPanel("favorites")}><Heart/><span>Saved</span><i>{favorites.length}</i></button></div>
+    <div className={`catalog-tool-dock ${showToolDock ? "visible" : ""}`}><button onClick={()=>setToolPanel("basket")}><ShoppingBasket/><span>RFQ List</span><i>{Object.keys(basket).length}</i></button><button onClick={()=>setToolPanel("compare")}><Scale/><span>Compare</span><i>{compare.length}</i></button><button onClick={()=>setToolPanel("favorites")}><Heart/><span>Saved</span><i>{favorites.length}</i></button></div>
     {toolPanel&&<div className="catalog-tool-overlay" onClick={()=>setToolPanel(null)}><aside onClick={e=>e.stopPropagation()}><header><div><small>BUYER TOOL</small><h2>{toolPanel==="basket"?"Request for quotation list":toolPanel==="compare"?"Product comparison":"Saved products"}</h2></div><button onClick={()=>setToolPanel(null)}><X/></button></header>{toolPanel==="basket"&&<>{basketProducts.length===0?<p className="tool-empty">Add products to build one combined inquiry.</p>:<div className="tool-list">{basketProducts.map(product=><article key={product.id}><b>{product.name}</b><label>Qty<input type="number" min="1" value={basket[product.id]} onChange={e=>setBasket(items=>({...items,[product.id]:Number(e.target.value)}))}/></label><button onClick={()=>setBasket(items=>{const next={...items};delete next[product.id];return next;})}><Trash2/></button></article>)}</div>} {basketProducts.length>0&&<button className="tool-primary" onClick={useInquiryList}>Continue to inquiry</button>}</>}{toolPanel==="favorites"&&<div className="tool-list">{initialProducts.filter(p=>favorites.includes(p.id)).map(product=><article key={product.id}><b>{product.name}</b><Link href={`/products/${product.id}`}>View</Link><button onClick={()=>toggleFavorite(product.id)}><Trash2/></button></article>)}{favorites.length===0&&<p className="tool-empty">Your saved products will appear here.</p>}</div>}{toolPanel==="compare"&&<div className="compare-table">{compareProducts.length===0?<p className="tool-empty">Choose 2–4 products to compare.</p>:<table><thead><tr><th>Item</th>{compareProducts.map(p=><th key={p.id}>{p.name}</th>)}</tr></thead><tbody><tr><td>Material</td>{compareProducts.map(p=><td key={p.id}>{p.material}</td>)}</tr><tr><td>MOQ</td>{compareProducts.map(p=><td key={p.id}>{p.moq}</td>)}</tr><tr><td>Size</td>{compareProducts.map(p=><td key={p.id}>{p.size||"—"}</td>)}</tr><tr><td>Lead time</td>{compareProducts.map(p=><td key={p.id}>{p.leadTime||"—"}</td>)}</tr><tr><td/><>{compareProducts.map(p=><td key={p.id}><button onClick={()=>toggleCompare(p.id)}>Remove</button></td>)}</></tr></tbody></table>}</div>}</aside></div>}
     <div className="mobile-contact-bar"><a href="#quote">Get a Quote</a>{settings.whatsapp.startsWith("http")&&<a href={settings.whatsapp}><MessageCircle /> WhatsApp</a>}</div>
 
-    <footer><a className="brand light" href="#top"><BrandMark settings={settings}/><b>{settings.companyName.toUpperCase()}</b><small>TOOLS & HARDWARE</small></a><p>{settings.legalName||settings.companyName}{settings.address?` · ${settings.address}`:""}</p><div><a href="#products">Products</a><Link href="/catalog">Catalog</Link><Link href="/faq">FAQ</Link><a href="#quote">Request Quote</a><Link href="/privacy">Privacy</Link><a href="/admin">Admin</a></div><small>© 2026 {settings.legalName||settings.companyName}. All rights reserved.{settings.businessHours?` · ${settings.businessHours}`:""}</small></footer>
+    <footer><a className="brand light" href="#top"><BrandMark settings={settings}/><b>{settings.companyName.toUpperCase()}</b><small>CUTTING TOOLS · OEM</small></a><p>{settings.legalName||settings.companyName}{settings.address?` · ${settings.address}`:""}</p><div><a href="#products">Products</a><Link href="/catalog">Catalog</Link><Link href="/faq">FAQ</Link><a href="#quote">Request Quote</a><Link href="/privacy">Privacy</Link><a href="/admin">Admin</a></div><small>© 2026 {settings.legalName||settings.companyName}. All rights reserved.{settings.businessHours?` · ${settings.businessHours}`:""}</small></footer>
   </main>;
 }
