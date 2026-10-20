@@ -40,8 +40,10 @@ export default async function ProductPage({ params, searchParams }: { params: Pr
   const images = [product.image, ...(product.images || [])].filter((image, index, items): image is string => Boolean(image) && items.indexOf(image) === index);
   const related = allProducts.filter(item => item.id !== product.id && item.category === product.category).slice(0, 3);
   const productSchema = { "@context": "https://schema.org", "@type": "Product", name: product.name, description: product.description, sku: product.sku || product.id, category: product.category, material: product.material, image: images.map(image => image.startsWith("http") ? image : `${process.env.SITE_URL || "https://edgevoratools.com"}${image}`), brand: { "@type": "Brand", name: settings.companyName } };
+  const base = process.env.SITE_URL || "https://edgevoratools.com";
+  const breadcrumbSchema = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Home", item: base }, { "@type": "ListItem", position: 2, name: product.category, item: `${base}/categories/${categorySlug(product.category)}` }, { "@type": "ListItem", position: 3, name: product.name, item: `${base}/products/${product.id}` }] };
 
-  return <main className="detail-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(productSchema).replace(/</g,"\\u003c")}}/>
+  return <main className="detail-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(productSchema).replace(/</g,"\\u003c")}}/><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(breadcrumbSchema).replace(/</g,"\\u003c")}}/>
     <header className="detail-nav"><Link href="/"><ArrowLeft /> Back to products</Link><b>{settings.companyName}</b><Link className="detail-quote" href={quoteUrl}>Request quote</Link></header>
     <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href={`/categories/${categorySlug(product.category)}`}>{product.category}</Link><span>/</span><b>{product.name}</b></nav>
     <section className="detail-hero">
