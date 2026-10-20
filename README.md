@@ -1,4 +1,4 @@
-# ForgeNova Cutting Tools（剪刀外贸询价站）
+# Edgevora Tools（切割工具外贸询价站）
 
 面向欧美采购商的英文剪刀与切割工具展示、OEM 服务和询价网站，包含中文产品管理后台。
 
@@ -41,7 +41,7 @@ npm run dev
    - `ADMIN_PASSWORD`：后台密码
    - `SESSION_SECRET`：随机长字符串
    - `DATA_DIR`：持久化数据目录
-   - `SITE_URL`：正式网站地址，例如 `https://example.com`
+   - `SITE_URL`：正式网站地址，例如 `https://edgevoratools.com`
    - `NOTIFY_EMAIL`：接收新询盘提醒的邮箱
    - `RESEND_API_KEY`：可选，开启询盘邮件提醒
    - `FROM_EMAIL`：可选，已在 Resend 验证的发件地址
@@ -56,7 +56,7 @@ npm run dev
 
 ## 上线前需要替换
 
-- `sales@example.com` 邮箱
+- 正式业务邮箱
 - WhatsApp 号码
 - 企业名称、Logo、真实剪刀产品图片、规格与价格
 - 关于我们、质检与交付信息
@@ -66,6 +66,6 @@ npm run dev
 
 为每条内容使用不同 UTM 参数，后台即可看到询盘来自哪个平台和活动：
 
-`https://your-domain.com/products/kitchen-shears?utm_source=tiktok&utm_medium=organic&utm_campaign=kitchen-test`
+`https://edgevoratools.com/products/kitchen-shears?utm_source=tiktok&utm_medium=organic&utm_campaign=kitchen-test`
 
 项目附带的剪刀图片为网站样稿示意图。正式上线前请在后台上传真实产品照片。

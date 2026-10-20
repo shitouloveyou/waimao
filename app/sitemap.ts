@@ -3,7 +3,7 @@ import { getPublicProducts } from "@/lib/store";
 import { categorySlug } from "@/lib/slug";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = process.env.SITE_URL || "https://example.com";
+  const base = process.env.SITE_URL || "https://edgevoratools.com";
   const products = await getPublicProducts();
   const categories = Array.from(new Set(products.map(product => product.category)));
   return [

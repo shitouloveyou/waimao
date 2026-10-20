@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: forgenova-hardware
+    name: edgevora-tools
     runtime: node
     plan: free
     buildCommand: npm ci && npm run build
