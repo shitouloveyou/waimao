@@ -58,6 +58,7 @@ export type Inquiry = {
   activities?: Array<{ id: string; date: string; type: string; content: string }>;
   attachmentUrl?: string;
   attachmentName?: string;
+  viewedAt?: string;
 };
 
 export type SiteSettings = {
