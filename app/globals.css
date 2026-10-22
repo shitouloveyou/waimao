@@ -126,3 +126,14 @@ footer{background:#171717}.mobile-contact-bar a:first-child{background:#1c1c1c}
 .contact-email>button{border:1px solid var(--line);background:#fff;padding:9px 12px;color:var(--ink);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .contact-email>button:hover,.contact-email>button:focus-visible{border-color:#a52f25;color:#a52f25;outline:none}
 @media(max-width:600px){.contact-email{align-items:stretch;flex-direction:column;gap:0;padding-bottom:12px}.contact-email>button{align-self:flex-start;margin-left:40px}}
+
+/* Clear mobile contact actions and room for the iPhone home indicator. */
+@media(max-width:600px){
+  body{padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px))}
+  .mobile-contact-bar{padding-bottom:env(safe-area-inset-bottom, 0px)}
+  .mobile-contact-bar a:first-child{background:#a52f25;color:#fff}
+  .mobile-contact-bar a{min-width:0}
+  .mobile-contact-bar svg{flex-shrink:0}
+  .catalog-tool-dock{bottom:calc(64px + env(safe-area-inset-bottom, 0px))}
+  #contact{scroll-margin-top:90px}
+}
