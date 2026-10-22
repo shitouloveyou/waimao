@@ -10,27 +10,49 @@ const clean = (value: FormDataEntryValue | null, max = 500) => String(value || "
 const escapeHtml = (value: string) => value.replace(/[&<>"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character] || character);
 
 async function notify(inquiry: Inquiry) {
+  const brevoKey = process.env.BREVO_API_KEY;
   const apiKey = process.env.RESEND_API_KEY;
   const settings = await getSettings();
   const recipient = process.env.NOTIFY_EMAIL || settings.email;
-  if (!apiKey || !recipient || recipient.endsWith("@example.com")) return;
+  if ((!brevoKey && !apiKey) || !recipient || recipient.endsWith("@example.com")) {
+    console.warn("Inquiry email notification not configured; inquiry was saved.");
+    return;
+  }
   const fields = [
     ["Name", inquiry.name], ["Email", inquiry.email], ["Company", inquiry.company], ["Country", inquiry.country],
     ["Request type", inquiry.requestType], ["Product", inquiry.product], ["Quantity", inquiry.quantity], ["Message", inquiry.message], ["UTM source", inquiry.utmSource],
     ["UTM medium", inquiry.utmMedium], ["UTM campaign", inquiry.utmCampaign], ["Landing page", inquiry.landingPage], ["Attachment", inquiry.attachmentUrl ? `${process.env.SITE_URL || ""}${inquiry.attachmentUrl}` : ""],
   ];
+  const subject = `New inquiry: ${inquiry.product || inquiry.company || inquiry.name}`;
+  const html = `<h2>New website inquiry</h2>${fields.map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value || "—")}</p>`).join("")}`;
+  if (brevoKey) {
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || settings.email;
+    if (!senderEmail || senderEmail.endsWith("@example.com")) throw new Error("Brevo sender email is not configured");
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: { "api-key": brevoKey, "Content-Type": "application/json", Accept: "application/json" },
+      signal: AbortSignal.timeout(10000),
+      body: JSON.stringify({
+        sender: { name: settings.companyName || "Website Inquiry", email: senderEmail },
+        to: [{ email: recipient }],
+        replyTo: { email: inquiry.email },
+        subject,
+        htmlContent: html,
+      }),
+    });
+    if (!response.ok) throw new Error(`Brevo notification rejected (HTTP ${response.status})`);
+    return;
+  }
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(10000),
     body: JSON.stringify({
       from: process.env.FROM_EMAIL || "Website Inquiry <onboarding@resend.dev>",
-      to: [recipient],
-      reply_to: inquiry.email,
-      subject: `New inquiry: ${inquiry.product || inquiry.company || inquiry.name}`,
-      html: `<h2>New website inquiry</h2>${fields.map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value || "—")}</p>`).join("")}`,
+      to: [recipient], reply_to: inquiry.email, subject, html,
     }),
   });
-  if (!response.ok) throw new Error("Email provider rejected notification");
+  if (!response.ok) throw new Error(`Resend notification rejected (HTTP ${response.status})`);
 }
 
 export async function POST(request: Request) {
