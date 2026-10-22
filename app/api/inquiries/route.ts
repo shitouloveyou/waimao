@@ -41,6 +41,8 @@ async function notify(inquiry: Inquiry) {
       }),
     });
     if (!response.ok) throw new Error(`Brevo notification rejected (HTTP ${response.status})`);
+    const receipt = await response.json().catch(() => null);
+    console.info("Inquiry email accepted by Brevo", { inquiryId: inquiry.id, messageId: receipt?.messageId || "unavailable" });
     return;
   }
   const response = await fetch("https://api.resend.com/emails", {
@@ -53,6 +55,8 @@ async function notify(inquiry: Inquiry) {
     }),
   });
   if (!response.ok) throw new Error(`Resend notification rejected (HTTP ${response.status})`);
+  const receipt = await response.json().catch(() => null);
+  console.info("Inquiry email accepted by Resend", { inquiryId: inquiry.id, messageId: receipt?.id || "unavailable" });
 }
 
 export async function POST(request: Request) {
