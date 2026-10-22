@@ -137,3 +137,29 @@ footer{background:#171717}.mobile-contact-bar a:first-child{background:#1c1c1c}
   .catalog-tool-dock{bottom:calc(64px + env(safe-area-inset-bottom, 0px))}
   #contact{scroll-margin-top:90px}
 }
+
+/* Keep mobile grid children and footer branding within the device width. */
+@media(max-width:900px){
+  .quote,.section-head{grid-template-columns:minmax(0,1fr)}
+  .quote>*,.form-grid>*,.quote label,.quote input,.quote select,.quote textarea{min-width:0;max-width:100%}
+  .quote h2,.quote-intro>p,.contact-cards span{overflow-wrap:anywhere}
+}
+@media(max-width:600px){
+  .form-grid{grid-template-columns:minmax(0,1fr)}
+  .quote form{width:100%;min-width:0}
+  .quote input,.quote select,.quote textarea{width:100%;font-size:16px}
+  .quote h2{font-size:clamp(32px,9vw,42px)}
+  .quote .kicker{display:block;font-size:10px;letter-spacing:.14em;line-height:1.6}
+  .contact-cards a,.contact-email{min-width:0}
+  .contact-cards svg{flex-shrink:0}
+  .brand{min-width:0;max-width:100%;grid-template-columns:36px minmax(0,1fr)}
+  .brand b{max-width:100%;font-size:13px;letter-spacing:.08em}
+  .brand small{min-width:0;white-space:normal;letter-spacing:.12em;font-size:8px}
+  .brand small::after{content:none}
+  footer{grid-template-columns:minmax(0,1fr)}
+  footer .brand.light{width:100%;max-width:100%}
+  footer>div{flex-wrap:wrap;gap:14px 20px;min-width:0}
+  footer>p,footer>small{min-width:0;overflow-wrap:anywhere}
+  .mobile-contact-bar{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mobile-contact-bar a{font-size:13px;gap:6px;padding:0 8px}
+}
