@@ -76,7 +76,7 @@ export default function Operations({ events, inquiries, orders, products, settin
     ["正式域名与 SITE_URL", readiness.siteUrl, "购买域名后在服务器设置 SITE_URL"],
     ["业务联系邮箱", Boolean(settings.email && !settings.email.endsWith("@example.com")), "在网站设置中填写正式邮箱"],
     ["WhatsApp 联系链接", settings.whatsapp.startsWith("http"), "填写完整的 https://wa.me/... 链接"],
-    ["询盘邮件通知", readiness.emailNotifications, "配置 RESEND_API_KEY 和 NOTIFY_EMAIL"],
+    ["询盘邮件通知", readiness.emailNotifications, "配置 BREVO_API_KEY（或 RESEND_API_KEY）和 NOTIFY_EMAIL"],
     ["后台强密码", readiness.secureAdminPassword, "在服务器设置新的 ADMIN_PASSWORD"],
     ["登录会话密钥", readiness.secureSession, "在服务器设置随机 SESSION_SECRET"],
     ["访问或广告统计", Boolean(settings.googleAnalyticsId || settings.metaPixelId || settings.tiktokPixelId), "至少配置一个统计平台"],
