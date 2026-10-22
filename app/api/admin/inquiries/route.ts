@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth";
-import { addInquiry, updateInquiry } from "@/lib/store";
+import { addInquiry, updateInquiry, getInquiries } from "@/lib/store";
 import type { Inquiry } from "@/lib/types";
 const stages = ["新询盘", "待联系", "已联系", "需求确认", "已报价", "谈判中", "已成交", "暂缓", "无效"];
 export async function PATCH(request: Request) {
   if (!await isAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const data = await request.json();
+  if (data.action === "viewed") {
+    if (typeof data.id !== "string" || typeof data.viewed !== "boolean") return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    if (!(await getInquiries()).some(item => item.id === data.id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const viewedAt = data.viewed ? new Date().toISOString() : "";
+    await updateInquiry(data.id, { viewedAt });
+    return NextResponse.json({ ok: true, viewedAt });
+  }
   if (typeof data.id !== "string" || !stages.includes(data.stage)) return NextResponse.json({ error: "Invalid data" }, { status: 400 });
   const activities = Array.isArray(data.activities) ? data.activities.slice(0,100).map((item:Record<string,unknown>)=>({ id:String(item.id||crypto.randomUUID()).slice(0,80), date:String(item.date||"").slice(0,30), type:String(item.type||"备注").slice(0,30), content:String(item.content||"").slice(0,1000) })).filter((item:{content:string})=>item.content) : [];
   await updateInquiry(data.id, { stage: data.stage, notes: String(data.notes || "").slice(0, 5000), followUp: String(data.followUp || "").slice(0, 10), priority: ["高","中","低"].includes(data.priority) ? data.priority : "中", customerType: String(data.customerType || "潜在客户").slice(0,80), whatsapp: String(data.whatsapp || "").slice(0,120), tags: String(data.tags || "").slice(0,300), dealValue: Math.max(0,Number(data.dealValue)||0), dealCurrency: String(data.dealCurrency||"USD").slice(0,10), lastContactAt: String(data.lastContactAt||"").slice(0,10), activities });
