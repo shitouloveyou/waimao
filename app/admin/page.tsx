@@ -10,7 +10,7 @@ export default async function Admin() {
   const authed = await isAdmin();
   const readiness: DeploymentReadiness = {
     siteUrl: Boolean(process.env.SITE_URL && !process.env.SITE_URL.includes("example.com")),
-    emailNotifications: Boolean(process.env.RESEND_API_KEY && process.env.NOTIFY_EMAIL),
+    emailNotifications: Boolean((process.env.BREVO_API_KEY || process.env.RESEND_API_KEY) && process.env.NOTIFY_EMAIL),
     secureAdminPassword: Boolean(process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD !== "admin123"),
     secureSession: Boolean(process.env.SESSION_SECRET && process.env.SESSION_SECRET !== "change-this-session-secret"),
   };
