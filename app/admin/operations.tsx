@@ -5,6 +5,20 @@ import type { Inquiry, Product, SalesOrder, SiteSettings } from "@/lib/types";
 
 export type DeploymentReadiness = { siteUrl: boolean; emailNotifications: boolean; secureAdminPassword: boolean; secureSession: boolean };
 
+// Calendar boundaries are independent of the administrator's browser timezone.
+const DAY_MS = 86400000;
+const CHINA_OFFSET = 8 * 60 * 60 * 1000;
+function dateKey(timestamp: number) {
+  return new Date(timestamp + CHINA_OFFSET).toISOString().slice(0, 10);
+}
+function summarize(events: EventRecord[]) {
+  return {
+    views: events.filter(event => event.type === "view").length,
+    products: events.filter(event => event.type === "product_click").length,
+    whatsapp: events.filter(event => event.type === "whatsapp").length,
+  };
+}
+
 export default function Operations({ events, inquiries, orders, products, settings, readiness }: { events: EventRecord[]; inquiries: Inquiry[]; orders: SalesOrder[]; products: Product[]; settings: SiteSettings; readiness: DeploymentReadiness }) {
   const [days, setDays] = useState("30");
   const [source, setSource] = useState("tiktok");
@@ -12,7 +26,35 @@ export default function Operations({ events, inquiries, orders, products, settin
   const [product, setProduct] = useState(products[0]?.id || "");
   const [base, setBase] = useState("");
   const [copied, setCopied] = useState(false);
-  const cutoff = Date.now() - Number(days) * 86400000;
+  const now = Date.now();
+  const chinaToday = dateKey(now);
+  const dayStart = Date.parse(chinaToday + "T00:00:00+08:00");
+  const cutoff = dayStart - (Number(days) - 1) * DAY_MS;
+  const datedEvents = events.filter(event => Number.isFinite(Date.parse(event.createdAt)));
+  const daily = Array.from({ length: Number(days) }, (_, index) => {
+    const timestamp = dayStart - index * DAY_MS;
+    return { date: dateKey(timestamp), views: 0, products: 0, whatsapp: 0, leads: 0 };
+  });
+  const dailyByDate = new Map(daily.map(day => [day.date, day]));
+  for (const event of datedEvents) {
+    const day = dailyByDate.get(dateKey(Date.parse(event.createdAt)));
+    if (!day) continue;
+    if (event.type === "view") day.views++;
+    if (event.type === "product_click") day.products++;
+    if (event.type === "whatsapp") day.whatsapp++;
+  }
+  for (const inquiry of inquiries) {
+    const timestamp = Date.parse(inquiry.createdAt);
+    if (!Number.isFinite(timestamp)) continue;
+    const day = dailyByDate.get(dateKey(timestamp));
+    if (day) day.leads++;
+  }
+  const totals = summarize(datedEvents);
+  const overview = [
+    { label: "今日", ...daily[0] },
+    { label: "昨日", ...daily[1] },
+    { label: "累计", ...totals },
+  ];
   const rows = events.filter(event => Date.parse(event.createdAt) >= cutoff);
   const views = rows.filter(event => event.type === "view");
   const visitors = new Set(views.map(event => event.visitor)).size;
@@ -47,11 +89,16 @@ export default function Operations({ events, inquiries, orders, products, settin
   const readinessScore = Math.round(checks.filter(([,done])=>done).length / checks.length * 100);
   return <div className="operations">
     <header><h1>运营中心</h1><select value={days} onChange={event => setDays(event.target.value)}><option value="7">最近7天</option><option value="30">最近30天</option><option value="90">最近90天</option></select></header>
-    <div className="metrics">{[["页面浏览", views.length], ["访问会话", visitors], ["产品点击", clicks], ["WhatsApp 点击", whatsapp], ["有效提交", leads], ["询盘转化率", rate(leads)]].map(([label, value]) => <article key={label}><small>{label}</small><strong>{value}</strong></article>)}</div>
+    <div className="metrics">{overview.map(item => <article key={item.label}><small>{item.label}页面浏览</small><strong>{item.views}</strong><p>产品点击 {item.products} 次 · WhatsApp 点击 {item.whatsapp} 次</p></article>)}</div>
+    <p>按北京时间（UTC+8）每日零点分界。累计为已有记录的全部数据，不受右上角日期筛选影响。</p>
+    <h2>所选期间合计（含今天，最近{days}天）</h2>
+    <div className="metrics">{[["期间页面浏览", views.length], ["期间访问会话", visitors], ["期间产品点击", clicks], ["期间 WhatsApp 点击", whatsapp], ["期间询盘提交", leads], ["期间询盘转化率", rate(leads)]].map(([label, value]) => <article key={label}><small>{label}</small><strong>{value}</strong></article>)}</div>
+    <article className="link-builder"><h2>每日访问与点击明细</h2><p>最近{days}天，日期从新到旧；没有记录的日期显示为0。浏览次数和点击次数不等于独立客户人数。</p><div style={{ overflowX: "auto", maxHeight: 480 }}><table style={{ width: "100%", minWidth: 580, borderCollapse: "collapse", textAlign: "left" }}><thead><tr>{["日期（北京时间）", "页面浏览", "产品点击", "WhatsApp 点击", "询盘提交"].map(label => <th key={label} style={{ padding: "12px 8px", borderBottom: "1px solid #ddd" }}>{label}</th>)}</tr></thead><tbody>{daily.map(day => <tr key={day.date}><td style={{ padding: "10px 8px" }}>{day.date}{day.date === chinaToday ? "（今日）" : ""}</td>{[day.views, day.products, day.whatsapp, day.leads].map((value, index) => <td key={index} style={{ padding: "10px 8px" }}>{value}</td>)}</tr>)}</tbody></table></div></article>
     <div className="business-alerts"><article className={followupsDue?"warn":""}><small>到期客户跟进</small><b>{followupsDue}</b><span>{followupsDue?"请到客户管理处理":"目前没有到期任务"}</span></article><article className={orderDelays?"danger":""}><small>可能延期订单</small><b>{orderDelays}</b><span>{orderDelays?"请检查生产和发货计划":"订单计划正常"}</span></article><article className={receivable?"warn":""}><small>USD 未收余额</small><b>{receivable.toLocaleString()}</b><span>发货前核对付款条款</span></article></div>
-    <p>产品点击率：{views.length ? (clicks / views.length * 100).toFixed(1) + "%" : "—"}（产品点击次数 ÷ 页面浏览次数）。访问会话按浏览器标签页识别，刷新会增加页面浏览；这不是社媒广告曝光点击率。统计从本次更新后开始。</p>
+    <p>期间产品点击率：{views.length ? (clicks / views.length * 100).toFixed(1) + "%" : "—"}（产品点击次数 ÷ 页面浏览次数）。访问会话按浏览器标签页识别，刷新会增加页面浏览；这不是社媒广告曝光点击率。已有统计记录继续保留，可能包含自己测试网站产生的访问；未采集期间无法补回。</p>
     <section className="readiness"><div className="readiness-head"><div><h2>正式上线准备度</h2><p>购买域名和迁移服务器前，按此清单逐项完成。</p></div><strong>{readinessScore}%</strong></div><div className="readiness-bar"><i style={{width:`${readinessScore}%`}}/></div><div className="readiness-list">{checks.map(([label,done,hint])=><div className={done?"done":"todo"} key={label}><b>{done?"✓":"!"}</b><span><strong>{label}</strong><small>{done?"已完成":hint}</small></span></div>)}</div></section>
     <div className="ops-columns"><article><h2>来源浏览量</h2>{Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,15).map(([name, count]) => <div className="metric-row" key={name}><span>{name}</span><b>{count}</b></div>)}</article><article><h2>热门页面</h2>{Object.entries(pages).sort((a,b) => b[1]-a[1]).slice(0,15).map(([name, count]) => <div className="metric-row" key={name}><span>{name}</span><b>{count}</b></div>)}</article></div>
     <article className="link-builder"><h2>生成社媒推广链接</h2><div className="admin-grid"><label>网站正式地址<input value={base} onChange={event => setBase(event.target.value)} placeholder="https://your-domain.com" /></label><label>平台<select value={source} onChange={event => setSource(event.target.value)}><option>tiktok</option><option>facebook</option><option>instagram</option><option>youtube</option></select></label><label>内容/活动名称<input value={campaign} onChange={event => setCampaign(event.target.value)} /></label><label>落地产品<select value={product} onChange={event => setProduct(event.target.value)}><option value="">首页</option>{products.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div><p className="landing-url">{link || "填入网站地址即可生成链接"}</p><button disabled={!link} onClick={async () => { try { await navigator.clipboard.writeText(link); setCopied(true); } catch { alert("复制失败，请手动选择链接复制"); } }}>{copied ? "已复制" : "复制推广链接"}</button></article>
   </div>;
 }
+
