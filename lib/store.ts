@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { publicProductSlug } from "./product-presentation";
 import type { Inquiry, Product, SalesOrder, SiteSettings } from "./types";
 
 const defaults: Product[] = [
@@ -22,7 +23,10 @@ function mutate(change: (data: Data) => void) { const next = pending.then(async 
 export async function getProducts() { return (await read()).products; }
 export async function getProduct(id: string) { return (await read()).products.find(product => product.id === id); }
 export async function getPublicProducts() { return (await read()).products.filter(product => product.active !== false).sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured))); }
-export async function getPublicProduct(id: string) { return (await read()).products.find(product => product.id === id && product.active !== false); }
+export async function getPublicProduct(id: string) {
+  const products = (await read()).products.filter(product => product.active !== false);
+  return products.find(product => product.id === id) || products.find(product => publicProductSlug(product) === id);
+}
 export async function getInquiries() { return (await read()).inquiries; }
 export async function getSettings() { return (await read()).settings; }
 export async function saveProducts(products: Product[]) { return mutate(data => { data.products = products; }); }

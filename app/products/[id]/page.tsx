@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, MessageCircle, Play } from "lucide-react";
-import { notFound } from "next/navigation";
+import { customizationCopy, productPath, productImageStyle, publicProductSlug } from "@/lib/product-presentation";
+import { permanentRedirect, notFound } from "next/navigation";
 import { getPublicProduct, getPublicProducts, getSettings } from "@/lib/store";
 import ProductGallery from "./product-gallery";
 import ShareButton from "./share-button";
@@ -13,16 +14,25 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const product = await getPublicProduct((await params).id);
   if (!product) return {};
   return {
-    title: product.seoTitle || `${product.name} | Wholesale & OEM`,
+    title: product.seoTitle?.replace(/\s*\|\s*Edgevora Tools\s*$/i, "") || `${product.name} | Wholesale`,
     description: product.seoDescription || product.description,
-    alternates: { canonical: `/products/${product.id}` },
+    alternates: { canonical: productPath(product) },
     openGraph: { title: product.seoTitle || product.name, description: product.seoDescription || product.description, images: [product.image, ...(product.images || [])].filter((image): image is string => Boolean(image)) },
   };
 }
 
 export default async function ProductPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const product = await getPublicProduct((await params).id);
+  const id = (await params).id;
+  const product = await getPublicProduct(id);
   if (!product) notFound();
+  if (id !== publicProductSlug(product)) {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(await searchParams)) {
+      if (Array.isArray(value)) value.forEach(item => query.append(key, item));
+      else if (typeof value === "string") query.set(key, value);
+    }
+    permanentRedirect(`${productPath(product)}${query.size ? `?${query}` : ""}`);
+  }
   const settings = await getSettings();
   const allProducts = await getPublicProducts();
   const incoming = await searchParams;
@@ -36,28 +46,27 @@ export default async function ProductPage({ params, searchParams }: { params: Pr
   const sampleUrl = `/?${quoteParams.toString()}#quote`;
   const features = (product.features || "").split("|").filter(Boolean);
   const extraSpecifications = (product.specifications || "").split("\n").map(line => line.split(":" )).filter(parts => parts.length > 1).map(([name, ...value]) => [name.trim(), value.join(":").trim()]);
-  const whatsapp = settings.whatsapp.startsWith("http") ? `${settings.whatsapp}${settings.whatsapp.includes("?") ? "&" : "?"}text=${encodeURIComponent(`Hello, I would like a quote for ${product.name}${product.sku ? ` (SKU: ${product.sku})` : ""}. ${process.env.SITE_URL ? `${process.env.SITE_URL}/products/${product.id}` : ""}`)}` : "";
+  const whatsapp = settings.whatsapp.startsWith("http") ? `${settings.whatsapp}${settings.whatsapp.includes("?") ? "&" : "?"}text=${encodeURIComponent(`Hello, I would like a quote for ${product.name}${product.sku ? ` (SKU: ${product.sku})` : ""}. ${process.env.SITE_URL ? `${process.env.SITE_URL}${productPath(product)}` : ""}`)}` : "";
   const images = [product.image, ...(product.images || [])].filter((image, index, items): image is string => Boolean(image) && items.indexOf(image) === index);
   const related = allProducts.filter(item => item.id !== product.id && item.category === product.category).slice(0, 3);
-  const productSchema = { "@context": "https://schema.org", "@type": "Product", name: product.name, description: product.description, sku: product.sku || product.id, category: product.category, material: product.material, image: images.map(image => image.startsWith("http") ? image : `${process.env.SITE_URL || "https://edgevoratools.com"}${image}`), brand: { "@type": "Brand", name: settings.companyName } };
   const base = process.env.SITE_URL || "https://edgevoratools.com";
-  const breadcrumbSchema = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Home", item: base }, { "@type": "ListItem", position: 2, name: product.category, item: `${base}/categories/${categorySlug(product.category)}` }, { "@type": "ListItem", position: 3, name: product.name, item: `${base}/products/${product.id}` }] };
+  const breadcrumbSchema = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Home", item: base }, { "@type": "ListItem", position: 2, name: product.category, item: `${base}/categories/${categorySlug(product.category)}` }, { "@type": "ListItem", position: 3, name: product.name, item: `${base}${productPath(product)}` }] };
 
-  return <main className="detail-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(productSchema).replace(/</g,"\\u003c")}}/><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(breadcrumbSchema).replace(/</g,"\\u003c")}}/>
+  return <main className="detail-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(breadcrumbSchema).replace(/</g,"\\u003c")}}/>
     <header className="detail-nav"><Link href="/"><ArrowLeft /> Back to products</Link><b>{settings.companyName}</b><Link className="detail-quote" href={quoteUrl}>Request quote</Link></header>
     <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href={`/categories/${categorySlug(product.category)}`}>{product.category}</Link><span>/</span><b>{product.name}</b></nav>
     <section className="detail-hero">
       <ProductGallery images={images} name={product.name} initialPosition={product.imagePosition} imageAlt={product.imageAlt} />
-      <div className="detail-copy"><span className="kicker">{product.category}</span><h1>{product.name}</h1><p>{product.description}</p><div className="detail-actions"><Link className="primary" href={quoteUrl}>Request a quotation <ArrowRight /></Link><Link className="sample-button" href={sampleUrl}>Request a sample</Link>{whatsapp&&<a className="whatsapp-button" href={whatsapp}><MessageCircle /> WhatsApp</a>}{product.videoUrl&&<a className="video-button" href={product.videoUrl} target="_blank" rel="noreferrer"><Play/> Watch video</a>}</div><div className="detail-meta"><small>Samples, private label and packaging options available.</small><ShareButton title={product.name}/></div></div>
+      <div className="detail-copy"><span className="kicker">{product.category}</span><h1>{product.name}</h1><p>{product.description}</p><div className="detail-actions"><Link className="primary" href={quoteUrl}>Request a quotation <ArrowRight /></Link><Link className="sample-button" href={sampleUrl}>Request a sample</Link>{whatsapp&&<a className="whatsapp-button" href={whatsapp}><MessageCircle /> WhatsApp</a>}{product.videoUrl&&<a className="video-button" href={product.videoUrl} target="_blank" rel="noreferrer"><Play/> Watch video</a>}</div><div className="detail-meta"><small>Ask about samples and packaging. Availability and minimum quantities are confirmed per model.</small><ShareButton title={product.name}/></div></div>
     </section>
-    <section className="spec-section"><div><span className="kicker">PRODUCT SPECIFICATION</span><h2>Technical details for buyer review.</h2>{product.sku && <p className="detail-sku">SKU: {product.sku}</p>}</div><dl>{product.model&&<div><dt>Model</dt><dd>{product.model}</dd></div>}<div><dt>Material</dt><dd>{product.material}</dd></div>{product.blade&&<div><dt>Blade / Finish</dt><dd>{product.blade}</dd></div>}<div><dt>Size / Spec</dt><dd>{product.size || "Custom options"}</dd></div><div><dt>MOQ</dt><dd>{product.moq}</dd></div>{product.packaging&&<div><dt>Packaging</dt><dd>{product.packaging}</dd></div>}{product.certification&&<div><dt>Standard</dt><dd>{product.certification}</dd></div>}<div><dt>Lead time</dt><dd>{product.leadTime || "Confirm with quote"}</dd></div><div><dt>Applications</dt><dd>{product.applications || "Wholesale and retail programs"}</dd></div>{extraSpecifications.map(([name,value])=><div key={name}><dt>{name}</dt><dd>{value}</dd></div>)}</dl></section>
-    <section className="feature-section"><div><span className="kicker">OEM & PRIVATE LABEL</span><h2>Adapt it to your market.</h2><p>{product.customization || "Logo, color and packaging can be developed around your sales channel."}</p></div><ul>{features.map(feature => <li key={feature}><Check />{feature}</li>)}<li><Check />Pre-production sample confirmation</li><li><Check />Export-ready packing and inspection</li></ul></section>
-    {related.length>0&&<section className="related-products"><span className="kicker">RELATED PRODUCTS</span><h2>More products in this category.</h2><div>{related.map(item=><Link href={`/products/${item.id}`} key={item.id}><span style={item.image?{backgroundImage:`url(${item.image})`}:undefined}/><b>{item.name}</b><small>{item.category}</small></Link>)}</div></section>}
+    <section className="spec-section"><div><span className="kicker">PRODUCT SPECIFICATION</span><h2>Technical details for buyer review.</h2>{product.sku && <p className="detail-sku">SKU: {product.sku}</p>}</div><dl>{product.model&&<div><dt>Model</dt><dd>{product.model}</dd></div>}<div><dt>Material</dt><dd>{product.material}</dd></div>{product.blade&&<div><dt>Blade / Finish</dt><dd>{product.blade}</dd></div>}<div><dt>Size / Spec</dt><dd>{product.size || "To be confirmed"}</dd></div><div><dt>MOQ</dt><dd>{product.moq}</dd></div>{product.packaging&&<div><dt>Packaging</dt><dd>{product.packaging}</dd></div>}{product.certification&&<div><dt>Standard</dt><dd>{product.certification}</dd></div>}<div><dt>Lead time</dt><dd>{product.leadTime || "Confirm with quote"}</dd></div><div><dt>Applications</dt><dd>{product.applications || "Wholesale and retail programs"}</dd></div>{extraSpecifications.map(([name,value])=><div key={name}><dt>{name}</dt><dd>{value}</dd></div>)}</dl></section>
+    <section className="feature-section"><div><span className="kicker">PRODUCT & ORDER OPTIONS</span><h2>Discuss your requirements.</h2><p>{customizationCopy(product)}</p></div><ul>{features.map(feature => <li key={feature}><Check />{feature}</li>)}</ul></section>
+    {related.length>0&&<section className="related-products"><span className="kicker">RELATED PRODUCTS</span><h2>More products in this category.</h2><div>{related.map(item=><Link href={productPath(item)} key={item.id}><span style={productImageStyle(item)}/><b>{item.name}</b><small>{item.category}</small></Link>)}</div></section>}
     <section className="detail-cta"><h2>Have a reference product or target price?</h2><p>Send the link, photo or specification and we will help identify a suitable production option.</p><Link className="primary" href={quoteUrl}>Start your inquiry <ArrowRight /></Link></section>
     <div className="mobile-contact-bar"><Link href={sampleUrl}>Request Sample</Link>{whatsapp&&<a href={whatsapp}><MessageCircle /> WhatsApp</a>}</div>
   </main>;
 }
 
 export async function generateStaticParams() {
-  return (await getPublicProducts()).map(product => ({ id: product.id }));
+  return (await getPublicProducts()).map(product => ({ id: publicProductSlug(product) }));
 }

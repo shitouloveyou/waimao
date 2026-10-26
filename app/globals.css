@@ -220,3 +220,21 @@ footer{background:#171717}.mobile-contact-bar a:first-child{background:#1c1c1c}
 .hero-slide-controls button[aria-pressed="true"]{background:#222;color:#fff;border-color:#fff}
 .hero-slide-controls button:focus-visible{outline:2px solid #a52f25;outline-offset:3px}
 @media(max-width:600px){.hero-slide-controls{right:5%;bottom:18px;gap:5px}.hero-slide-controls button{min-width:28px;height:28px}}
+
+/* Keep headline and photography in separate columns on larger screens. */
+@media(min-width:901px){
+  .hero-copy h1{max-width:49%;font-size:clamp(44px,4.2vw,64px);line-height:1.08;overflow-wrap:break-word}
+  .hero-copy>p{max-width:45%}
+  .hero-copy .eyebrow{max-width:48%;line-height:1.6}
+  .hero-static-product{right:2%;width:47%}
+}
+@media(min-width:601px) and (max-width:900px){
+  .hero-copy h1{max-width:62%;font-size:clamp(38px,5.7vw,50px);line-height:1.08}
+  .hero-copy>p{max-width:57%}
+  .hero-static-product{right:0;width:42%}
+}
+@media(max-width:600px){
+  .hero-copy h1{max-width:100%;font-size:clamp(34px,9.5vw,43px);line-height:1.08;overflow-wrap:break-word}
+  .hero-copy>p,.hero-copy .eyebrow{max-width:100%}
+}
+.category-products .product-art,.catalog-image,.related-products a>span{background-color:#fff}

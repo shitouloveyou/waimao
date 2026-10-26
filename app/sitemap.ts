@@ -1,6 +1,9 @@
+import { productPath } from "@/lib/product-presentation";
 import type { MetadataRoute } from "next";
 import { getPublicProducts } from "@/lib/store";
 import { categorySlug } from "@/lib/slug";
+
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.SITE_URL || "https://edgevoratools.com";
@@ -14,6 +17,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/oem`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/quality`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
     ...categories.map(category => ({ url: `${base}/categories/${categorySlug(category)}`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.9 })),
-    ...products.map(product => ({ url: `${base}/products/${product.id}`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.8 })),
+    ...products.map(product => ({ url: `${base}${productPath(product)}`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.8 })),
   ];
 }
