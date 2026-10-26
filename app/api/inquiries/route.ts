@@ -70,7 +70,9 @@ async function handlePOST(request: Request) {
   if (clean(form.get("website"))) return NextResponse.json({ ok: true });
   const email = clean(form.get("email"), 200);
   const message = clean(form.get("message"), 3000);
-  if (!clean(form.get("name"), 120) || !/^\S+@\S+\.\S+$/.test(email) || message.length < 5) return NextResponse.json({ error: "Invalid inquiry" }, { status: 400 });
+  if (!clean(form.get("name"), 120)) return NextResponse.json({ error: "Please enter your name.", field: "name" }, { status: 400 });
+  if (!/^\S+@\S+\.\S+$/.test(email)) return NextResponse.json({ error: "Please enter a valid email address.", field: "email" }, { status: 400 });
+  if (!message) return NextResponse.json({ error: "Please enter your requirements.", field: "message" }, { status: 400 });
   const attachment = form.get("attachment");
   let attachmentUrl = "", attachmentName = "";
   if (attachment instanceof File && attachment.size > 0) {

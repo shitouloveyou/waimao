@@ -65,9 +65,21 @@ test('production security boundaries and public product routes', { timeout: 6000
       assert.equal((await request('/api/inquiries', { method: 'POST', headers: { Origin: origin }, body: form })).status, 400);
     }
     const form = new FormData();
-    form.set('name', 'Local Test'); form.set('email', 'test@example.invalid'); form.set('message', 'Local fixture inquiry, no email is sent.');
+    form.set('name', 'Local Test'); form.set('email', 'test@example.invalid'); form.set('message', '上线测试');
     form.set('attachment', new File([png], 'reference.png', { type: 'image/png' }));
     assert.equal((await request('/api/inquiries', { method: 'POST', headers: { Origin: origin }, body: form })).status, 200);
+    const shortForm = new FormData();
+    shortForm.set('name', 'Local Test'); shortForm.set('email', 'test@example.invalid'); shortForm.set('message', 'Hi');
+    const shortResponse = await request('/api/inquiries', { method: 'POST', headers: { Origin: origin }, body: shortForm });
+    assert.equal(shortResponse.status, 200, 'short non-empty requirements without an attachment are accepted');
+    for (const [field, value, expected] of [['name', '   ', 'Please enter your name.'], ['email', 'invalid', 'Please enter a valid email address.'], ['message', '   ', 'Please enter your requirements.']]) {
+      const invalidForm = new FormData();
+      invalidForm.set('name', 'Local Test'); invalidForm.set('email', 'test@example.invalid'); invalidForm.set('message', 'Hi');
+      invalidForm.set(field, value);
+      const invalid = await request('/api/inquiries', { method: 'POST', headers: { Origin: origin, 'X-Real-IP': '127.0.0.2' }, body: invalidForm });
+      assert.equal(invalid.status, 400);
+      assert.equal((await invalid.json()).error, expected);
+    }
     const productUpload = new FormData();
     productUpload.set('file', new File([png], 'product.png', { type: 'image/png' }));
     const publicAsset = await request('/api/admin/upload', { method: 'POST', headers: { Origin: origin, Cookie: cookie }, body: productUpload });
@@ -75,7 +87,7 @@ test('production security boundaries and public product routes', { timeout: 6000
     const publicUrl = (await publicAsset.json()).url;
     assert.equal((await request(publicUrl)).status, 200, 'product photos remain public');
     const data = JSON.parse(await readFile(path.join(directory, 'store.json'), 'utf8'));
-    const attachment = data.inquiries[0].attachmentUrl;
+    const attachment = data.inquiries.find(item => item.attachmentUrl?.startsWith('/api/attachments/')).attachmentUrl;
     assert.match(attachment, /^\/api\/attachments\//);
     assert.equal((await request(attachment)).status, 401);
     const authorizedFile = await request(attachment, { headers: { Cookie: cookie } });
