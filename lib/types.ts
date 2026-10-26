@@ -84,6 +84,7 @@ export type SiteSettings = {
   paymentTerms?: string;
   exportMarkets?: string;
   qualityProcess?: string;
+  heroImage?: string;
   heroVideos?: HeroVideo[];
 };
 
