@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
-export const metadata: Metadata = { title: "Wholesale Hardware FAQ", description: "Answers about MOQ, samples, OEM branding, packaging, lead time, inspection and shipping for wholesale hardware orders." };
+export const metadata: Metadata = { title: "Wholesale Hardware FAQ", description: "Answers about MOQ, samples, OEM branding, packaging, lead time, inspection and shipping for wholesale hardware orders.", alternates: { canonical: "/faq" } };
 
 const questions = [
   ["What is your minimum order quantity?", "MOQ depends on the product, material, packaging and customization. Standard products may support smaller trial orders, while custom colors, logos and packaging normally require a higher quantity."],

@@ -2,11 +2,16 @@ type Entry = { count: number; resetAt: number };
 const buckets = new Map<string, Entry>();
 
 export function clientAddress(request: Request) {
-  return (request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown").split(",")[0].trim();
+  const value = request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",").pop() || "unknown";
+  return value.trim().slice(0, 80);
 }
 
 export function rateLimit(key: string, limit: number, windowMs: number) {
   const now = Date.now();
+  if (buckets.size >= 5000) {
+    for (const [name, value] of buckets) if (value.resetAt <= now) buckets.delete(name);
+    if (buckets.size >= 5000 && !buckets.has(key)) return { allowed: false, retryAfter: 60 };
+  }
   const existing = buckets.get(key);
   const entry = !existing || existing.resetAt <= now ? { count: 0, resetAt: now + windowMs } : existing;
   entry.count += 1;

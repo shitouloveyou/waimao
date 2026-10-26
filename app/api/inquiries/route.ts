@@ -1,3 +1,5 @@
+import { matchesFileType } from "@/lib/upload-validation";
+import { secureEndpoint, readForm } from "@/lib/request-security";
 import { NextResponse } from "next/server";
 import { addInquiry, getSettings } from "@/lib/store";
 import type { Inquiry } from "@/lib/types";
@@ -21,7 +23,7 @@ async function notify(inquiry: Inquiry) {
   const fields = [
     ["Name", inquiry.name], ["Email", inquiry.email], ["Company", inquiry.company], ["Country", inquiry.country],
     ["Request type", inquiry.requestType], ["Product", inquiry.product], ["Quantity", inquiry.quantity], ["Message", inquiry.message], ["UTM source", inquiry.utmSource],
-    ["UTM medium", inquiry.utmMedium], ["UTM campaign", inquiry.utmCampaign], ["Landing page", inquiry.landingPage], ["Attachment", inquiry.attachmentUrl ? `${process.env.SITE_URL || ""}${inquiry.attachmentUrl}` : ""],
+    ["UTM medium", inquiry.utmMedium], ["UTM campaign", inquiry.utmCampaign], ["Landing page", inquiry.landingPage], ["Attachment", inquiry.attachmentUrl ? `Reference file uploaded. View securely in your website admin: ${process.env.SITE_URL || ""}/admin` : ""],
   ];
   const subject = `New inquiry: ${inquiry.product || inquiry.company || inquiry.name}`;
   const html = `<h2>New website inquiry</h2>${fields.map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value || "—")}</p>`).join("")}`;
@@ -59,25 +61,29 @@ async function notify(inquiry: Inquiry) {
   console.info("Inquiry email accepted by Resend", { inquiryId: inquiry.id, messageId: receipt?.id || "unavailable" });
 }
 
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
+  const globalLimit = rateLimit("inquiry:global", 60, 3600000);
+  if (!globalLimit.allowed) return NextResponse.json({error:"Too many requests. Please try again later."},{status:429,headers:{"Retry-After":String(globalLimit.retryAfter)}});
   const throttle = rateLimit(`inquiry:${clientAddress(request)}`, 6, 60 * 60 * 1000);
   if (!throttle.allowed) return NextResponse.json({ error: "Too many inquiries. Please try again later." }, { status: 429, headers: { "Retry-After": String(throttle.retryAfter) } });
-  const form = await request.formData();
+  const form = await readForm(request, 9 * 1024 * 1024);
   if (clean(form.get("website"))) return NextResponse.json({ ok: true });
   const email = clean(form.get("email"), 200);
   const message = clean(form.get("message"), 3000);
-  if (!/^\S+@\S+\.\S+$/.test(email) || message.length < 5) return NextResponse.json({ error: "Invalid inquiry" }, { status: 400 });
+  if (!clean(form.get("name"), 120) || !/^\S+@\S+\.\S+$/.test(email) || message.length < 5) return NextResponse.json({ error: "Invalid inquiry" }, { status: 400 });
   const attachment = form.get("attachment");
   let attachmentUrl = "", attachmentName = "";
   if (attachment instanceof File && attachment.size > 0) {
     const types: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "application/pdf": "pdf" };
     const extension = types[attachment.type];
     if (!extension || attachment.size > 8 * 1024 * 1024) return NextResponse.json({ error: "Attachment must be JPG, PNG, WebP or PDF and no larger than 8MB" }, { status: 400 });
+    const bytes = Buffer.from(await attachment.arrayBuffer());
+    if (!matchesFileType(bytes, attachment.type)) return NextResponse.json({ error: "File content does not match its type" }, { status: 400 });
     const name = `${crypto.randomUUID()}.${extension}`;
-    const directory = path.join(process.env.DATA_DIR || path.join(process.cwd(), "data"), "uploads");
-    await fs.mkdir(directory, { recursive: true });
-    await fs.writeFile(path.join(directory, name), Buffer.from(await attachment.arrayBuffer()));
-    attachmentUrl = `/api/uploads/${name}`;
+    const directory = path.join(process.env.DATA_DIR || path.join(process.cwd(), "data"), "private-uploads");
+    await fs.mkdir(directory, { recursive: true, mode: 0o700 });
+    await fs.writeFile(path.join(directory, name), bytes, { mode: 0o600 });
+    attachmentUrl = `/api/attachments/${name}`;
     attachmentName = attachment.name.slice(0, 180);
   }
   const inquiry: Inquiry = {
@@ -93,3 +99,5 @@ export async function POST(request: Request) {
   try { await notify(inquiry); } catch (error) { console.error("Inquiry email notification failed", error); }
   return NextResponse.json({ ok: true });
 }
+
+export const POST = secureEndpoint(handlePOST);

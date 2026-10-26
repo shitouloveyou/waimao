@@ -30,7 +30,7 @@ npm run dev
 
 访问 `http://localhost:3000`，后台地址为 `http://localhost:3000/admin`。
 
-未设置环境变量时，临时后台密码为 `admin123`。正式上线前必须设置安全密码。
+未设置 ADMIN_PASSWORD 和至少 32 字符的 SESSION_SECRET 时，后台登录不可用。没有默认后台密码。
 
 ## 部署到 Render
 
@@ -69,3 +69,21 @@ npm run dev
 `https://edgevoratools.com/products/kitchen-shears?utm_source=tiktok&utm_medium=organic&utm_campaign=kitchen-test`
 
 项目附带的剪刀图片为网站样稿示意图。正式上线前请在后台上传真实产品照片。
+
+
+## 服务器上线安全
+
+- 将 Next.js 仅绑定回环地址（例如 `next start -H 127.0.0.1`），由 Nginx 代理；公网不开放 Node 端口。
+- Nginx 应覆盖 `X-Real-IP`，不能直接信任访问者提供的代理头；Cloudflare 真实 IP 配置只信任其官方地址段。
+- `SITE_URL` 填正式 HTTPS 域名；所有写接口校验同源请求，后台读写均另行检查管理员会话。
+- 设置 Nginx `client_max_body_size 10m` 并配置请求速率/超时限制；应用层另外限制实际读取的请求体大小。
+- 客户询盘附件在 `DATA_DIR/private-uploads`，只允许登录后台的管理员读取。历史附件链接同样检查权限，历史已被外部缓存的副本不能通过代码撤回。
+- 定期备份整个 DATA_DIR（包括 store.json、uploads、private-uploads 和 events.jsonl），不要把数据、环境变量或密钥提交到 GitHub。后台 JSON 导出不包含附件文件。
+- 使用当前已修补的 Node.js LTS，定期运行 `npm audit --omit=dev`；这不代替系统更新。
+
+
+## 安全回归检查
+
+先 `npm run build`，再运行 `node --test tests/security.test.mjs`。
+测试启动只监听本地回环地址的临时实例，使用独立临时数据目录和测试凭据；不使用真实客户数据、不发送邮件。
+覆盖匿名接口访问、跨站写入、Cookie、附件权限、伪装上传、请求大小、CSV 导出和旧产品链接跳转。
