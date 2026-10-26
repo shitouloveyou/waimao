@@ -98,8 +98,9 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
 
   const imageStyle = (product: Product) => product.image ? {
     backgroundImage: `url(${product.image})`,
-    backgroundPosition: product.imagePosition || "center",
-    backgroundSize: product.imagePosition ? "300% 200%" : "cover",
+    backgroundPosition: product.image === "/scissors-catalog.png" ? product.imagePosition || "center" : "center",
+    backgroundSize: product.image === "/scissors-catalog.png" && product.imagePosition ? "300% 200%" : "contain",
+    backgroundRepeat: "no-repeat",
   } : undefined;
 
   return <main>
