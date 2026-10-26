@@ -115,7 +115,7 @@ export default function Storefront({ initialProducts, settings }: { initialProdu
     </header>
 
     <section className="hero scissors-hero" id="top">
-      <HeroMedia image={settings.heroImage || initialProducts.find(product => product.image && product.image !== "/scissors-catalog.png")?.image} />
+      <HeroMedia images={settings.heroImages} image={settings.heroImage || initialProducts.find(product => product.image && product.image !== "/scissors-catalog.png")?.image} />
       <div className="hero-copy">
         <div className="eyebrow">CUTTING TOOLS · PRIVATE LABEL · GLOBAL SUPPLY</div>
         <h1>{settings.tagline || "Hardware products engineered for your market."}</h1>
