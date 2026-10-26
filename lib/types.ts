@@ -85,6 +85,7 @@ export type SiteSettings = {
   exportMarkets?: string;
   qualityProcess?: string;
   heroImage?: string;
+  heroImages?: string[];
   heroVideos?: HeroVideo[];
 };
 
