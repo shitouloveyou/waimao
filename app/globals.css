@@ -169,3 +169,34 @@ footer{background:#171717}.mobile-contact-bar a:first-child{background:#1c1c1c}
 
 /* Match gallery space below the photo to the white product page. */
 .detail-page .detail-gallery{background-color:#fff}
+
+/* Compact, centered product detail layout with full uncropped photographs. */
+.detail-page .detail-hero{
+  width:calc(100% - 64px);max-width:1200px;margin:8px auto 0;
+  grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);
+  gap:48px;min-height:0;align-items:start;
+}
+.detail-page .detail-gallery{width:100%;align-self:start}
+.detail-page .detail-gallery .detail-image{width:100%;height:auto;min-height:0;aspect-ratio:1}
+.detail-page .detail-thumbnails{padding:12px 0;justify-content:center}
+.detail-page .detail-thumbnails img{object-fit:contain;background:#fff}
+.detail-page .detail-copy{min-width:0;padding:24px 0;justify-content:flex-start}
+.detail-page .detail-copy h1{font-size:clamp(32px,3vw,44px);line-height:1.12;margin:14px 0 18px}
+.detail-page .detail-copy>p{font-size:16px;line-height:1.7;margin:0}
+.detail-page .detail-actions{flex-wrap:wrap;margin-top:24px;gap:8px}
+.detail-page .detail-actions>a{font-size:13px;padding:13px 16px;justify-content:center}
+.detail-page .detail-meta{margin-top:16px;align-items:flex-start}
+.detail-page .spec-section,.detail-page .feature-section{padding-top:56px;padding-bottom:56px;gap:48px}
+@media(max-width:900px){
+  .detail-page .detail-hero{width:calc(100% - 40px);max-width:620px;grid-template-columns:minmax(0,1fr);gap:16px}
+  .detail-page .detail-copy{padding:0 0 24px}
+  .detail-page .detail-copy h1{font-size:36px}
+  .detail-page .spec-section,.detail-page .feature-section{gap:24px;padding-top:40px;padding-bottom:40px}
+}
+@media(max-width:600px){
+  .detail-page .detail-hero{width:calc(100% - 32px)}
+  .detail-page .detail-copy h1{font-size:30px}
+  .detail-page .detail-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .detail-page .detail-actions>a{min-width:0;padding:12px 10px}
+  .detail-page .detail-meta{flex-wrap:wrap}
+}
