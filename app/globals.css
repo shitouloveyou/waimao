@@ -163,3 +163,6 @@ footer{background:#171717}.mobile-contact-bar a:first-child{background:#1c1c1c}
   .mobile-contact-bar{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}
   .mobile-contact-bar a{font-size:13px;gap:6px;padding:0 8px}
 }
+
+/* Show the entire product photo, including tall blister packaging. */
+.detail-page .detail-image{background-size:contain;background-position:center;background-repeat:no-repeat;background-color:#fff}
