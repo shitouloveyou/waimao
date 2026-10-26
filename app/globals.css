@@ -213,3 +213,10 @@ footer{background:#171717}.mobile-contact-bar a:first-child{background:#1c1c1c}
   .hero-static-product{right:0;top:14%;width:100%;height:76%}
   .hero-static .hero-video-shade{background:#101010c9}
 }
+
+/* Static-image slideshow controls; all product images remain uncropped. */
+.hero-slide-controls{position:absolute;right:14%;bottom:48px;z-index:4;display:flex;gap:8px;align-items:center}
+.hero-slide-controls button{border:1px solid #666;background:#ffffffdf;color:#222;min-width:32px;height:32px;border-radius:50%;font-size:12px;cursor:pointer}
+.hero-slide-controls button[aria-pressed="true"]{background:#222;color:#fff;border-color:#fff}
+.hero-slide-controls button:focus-visible{outline:2px solid #a52f25;outline-offset:3px}
+@media(max-width:600px){.hero-slide-controls{right:5%;bottom:18px;gap:5px}.hero-slide-controls button{min-width:28px;height:28px}}
