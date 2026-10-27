@@ -16,20 +16,18 @@ These are category-level import values, **not actual unit usage or demand for th
 
 ## Implemented language scope
 
-- Existing English site remains at `/` and `/products/...`.
-- French `/fr`, German `/de`, Spanish `/es`: translated buyer landing/catalog, product template and inquiry form.
-- One shared product database and images; active products automatically appear in each language. Products are never copied into independent stores.
-- Top language links use native language names; product detail links retain the current product and URL query attribution. Other English auxiliary pages link to the relevant language's homepage.
-- Each translated page has a self-canonical, reciprocal alternate language URLs and sitemap entries. Unknown languages and inactive/missing products return 404.
-- Product editor supports optional name and description translations. Known category/material/name terms have a limited built-in glossary. All other product-specific English technical text is explicitly displayed as original English, not passed off as a full translation. Confirm translations against actual specifications; no model attributes are invented.
-- Auxiliary quality, OEM, FAQ, category, printable catalog and privacy pages remain English in this first version; the language choices lead back to a translated buying entry point. This is not a claim of complete site-wide translation.
-- Forms use the existing same-origin inquiry endpoint, spam field, limits, private attachment handling and notification settings. Request type values remain stable for the admin. No additional server, translation API, package or background service.
-- Product clicks on localized paths use the existing event tracking. Analytics consent behavior is unchanged; the existing consent banner is English.
+- Language buttons change a shared React translation context **in place**. They do not navigate, reload or swap page layouts. The current URL, filters, basket, favorites, comparison, slideshow and form DOM remain in the same component tree. Preference is remembered locally.
+- French `/fr`, German `/de`, Spanish `/es` entry URLs remain available for direct links/search engines, but now render the **same original Storefront and ProductPage** components as English. The earlier separate simplified templates were removed.
+- All original sections, branding, gallery, media, buttons, ordering and CSS classes are shared. The language layer renders text fragments without extra HTML layout wrappers; input/button adapters retain native elements and refs.
+- Existing quality, OEM, FAQ, catalog, category, privacy and consent components use the same text layer. UI and standard content use local dictionaries. Arbitrary custom English business copy or technical descriptions need explicit dictionary/product translations; unknown text remains unchanged rather than invented. Per-product name and description translations in admin remain supported.
+- Each translated entry has self-canonical, reciprocal alternate language URLs and sitemap entries. Unknown languages and inactive/missing products remain 404.
+- Product data and images are shared. All inquiry form field names, option values, submission handling, private attachments and notifications remain unchanged; translating the option label never changes its submitted value.
+- No translation service, DOM mutation, new runtime packages or separate background process.
 
 Google reference: https://developers.google.com/search/docs/specialty/international/localized-versions
 
 ## Validation and deployment
 
-Production build and integration checks cover the three landing/product routes, reciprocal metadata, canonical URLs, sitemap, product alias redirects with repeated query values, missing routes, saved translations and malformed translation rejection, plus existing security checks. Phone visual validation and a real localized inquiry should be completed after deployment. Tests use local temporary data, with no production inquiry or customer email sent.
+Production build and integration checks cover the three landing/product routes, reciprocal metadata, canonical URLs, sitemap, product alias redirects with repeated query values, missing routes, saved translations and malformed translation rejection, plus existing security checks. Browser access to the local preview was unavailable (connection refused). Visual checks, in-place switching with a filled form and one authorized inquiry should be completed on the deployed site. Tests use local temporary data, with no production inquiry or customer email sent.
 
 Deploy with git pull, npm run build, then restart edgevora only after the build succeeds. Test a language switch from a product page and one authorized test inquiry; check the admin, email and Telegram. Adding languages does not guarantee indexing, rankings or organic traffic. Use Search Console impressions, queries, countries and actual inquiries for follow-up decisions.

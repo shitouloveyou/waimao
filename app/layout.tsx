@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Tracking from "./tracking";
 import LanguageSwitcher from "./language-switcher";
+import { TranslationProvider } from "./translation-context";
 import AnalyticsPixels from "./analytics-pixels";
 import { getSettings } from "@/lib/store";
 import CookieConsent from "./cookie-consent";
@@ -33,7 +34,7 @@ export default async function RootLayout({
   const organization = { "@context": "https://schema.org", "@type": "Organization", name: settings.legalName || settings.companyName, alternateName: settings.companyName, logo: settings.logo ? `${process.env.SITE_URL || "https://edgevoratools.com"}${settings.logo}` : undefined, url: process.env.SITE_URL || "https://edgevoratools.com", email: settings.email || undefined, address: settings.address, description: "Tool sourcing and wholesale inquiries. Contact us for our current product range and order requirements.", sameAs: [settings.instagram, settings.facebook, settings.tiktok].filter(Boolean) };
   return (
     <html lang="en">
-      <body className="antialiased"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organization).replace(/</g, "\\u003c") }} /><AnalyticsPixels settings={settings} /><Tracking /><LanguageSwitcher />{children}<CookieConsent enabled={hasAnalytics} /></body>
+      <body className="antialiased"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organization).replace(/</g, "\\u003c") }} /><AnalyticsPixels settings={settings} /><Tracking /><TranslationProvider><LanguageSwitcher />{children}<CookieConsent enabled={hasAnalytics} /></TranslationProvider></body>
     </html>
   );
 }

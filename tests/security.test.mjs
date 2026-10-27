@@ -118,7 +118,15 @@ test('production security boundaries and public product routes', { timeout: 6000
       assert.ok(html.includes(title));
       const detail = await request(`/${lang}/products/sk5-pruning-shears-red-silver`);
       assert.equal(detail.status, 200);
-      assert.ok((await detail.text()).includes(`/${lang}/products/sk5-pruning-shears-safety-lock`));
+      const detailHtml=await detail.text();
+      assert.ok(detailHtml.includes('class="detail-hero"'));
+      assert.ok(detailHtml.includes('/products/sk5-pruning-shears-safety-lock'));
+      assert.ok(html.includes('class="hero scissors-hero"'));
+      assert.ok(html.includes('id="inquiry-form"'));
+      assert.ok(html.includes('class="product-card-tools"'));
+      assert.ok(!html.includes('class="locale-hero"'));
+      assert.ok(html.includes('value="Wholesale quote"'));
+      assert.ok(html.includes('value="Sample request"'));
       const redirect = await request(`/${lang}/products/kitchen-shears?utm_source=test&tag=a&tag=b`);
       assert.equal(redirect.status, 308);
       assert.equal(redirect.headers.get('location'), `/${lang}/products/sk5-pruning-shears-red-silver?utm_source=test&tag=a&tag=b`);
