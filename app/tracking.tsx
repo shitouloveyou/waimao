@@ -24,7 +24,7 @@ export default function Tracking() {
       if (!link) return;
       const href = link.getAttribute("href") || "";
       if (href.includes("wa.me") || href.includes("whatsapp.com")) send("whatsapp");
-      else if (href.startsWith("/products/")) send("product_click");
+      else if (/^\/(?:fr\/|de\/|es\/)?products\//.test(href)) send("product_click");
     };
     document.addEventListener("click", listener);
     return () => document.removeEventListener("click", listener);

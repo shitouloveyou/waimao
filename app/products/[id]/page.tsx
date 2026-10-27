@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { languageAlternates } from "@/lib/languages";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, MessageCircle, Play } from "lucide-react";
 import { customizationCopy, productPath, productImageStyle, publicProductSlug } from "@/lib/product-presentation";
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: product.seoTitle?.replace(/\s*\|\s*Edgevora Tools\s*$/i, "") || `${product.name} | Wholesale`,
     description: product.seoDescription || product.description,
-    alternates: { canonical: productPath(product) },
+    alternates: { canonical: productPath(product), languages: languageAlternates(productPath(product)) },
     openGraph: { title: product.seoTitle || product.name, description: product.seoDescription || product.description, images: [product.image, ...(product.images || [])].filter((image): image is string => Boolean(image)) },
   };
 }

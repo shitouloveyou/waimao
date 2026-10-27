@@ -107,6 +107,30 @@ test('production security boundaries and public product routes', { timeout: 6000
       assert.equal(redirect.headers.get('location'), `/products/${slug}?utm_source=test&tag=a&tag=b`);
       assert.equal((await request(`/products/${slug}`)).status, 200);
     }
+    for (const [lang,title,label] of [['fr','Ciseaux et outils de coupe','Envoyer la demande'],['de','Scheren und Schneidwerkzeuge','Anfrage senden'],['es','Tijeras y herramientas de corte','Enviar consulta']]) {
+      const translated = await request(`/${lang}`);
+      assert.equal(translated.status, 200);
+      const html = await translated.text();
+      assert.ok(html.includes(`lang="${lang}"`));
+      assert.ok(html.includes(label));
+      assert.ok(html.includes(`rel="canonical" href="${origin}/${lang}"`));
+      assert.match(html, /<link[^>]+rel="alternate"[^>]+hreflang="en"[^>]+href="https:\/\/edgevoratools.com\/?"/i);
+      assert.ok(html.includes(title));
+      const detail = await request(`/${lang}/products/sk5-pruning-shears-red-silver`);
+      assert.equal(detail.status, 200);
+      assert.ok((await detail.text()).includes(`/${lang}/products/sk5-pruning-shears-safety-lock`));
+      const redirect = await request(`/${lang}/products/kitchen-shears?utm_source=test&tag=a&tag=b`);
+      assert.equal(redirect.status, 308);
+      assert.equal(redirect.headers.get('location'), `/${lang}/products/sk5-pruning-shears-red-silver?utm_source=test&tag=a&tag=b`);
+      assert.equal((await request(`/${lang}/products/nonexistent`)).status, 404);
+    }
+    assert.equal((await request('/zz')).status, 404);
+    const localizedProducts = products.map((product,index)=>index===0?{...product,translations:{fr:{name:'Sécateur de test',description:'Description française vérifiée.'}}}:product);
+    assert.equal((await request('/api/admin/products', {method:'PUT',headers:admin,body:JSON.stringify(localizedProducts)})).status,200);
+    assert.ok((await (await request('/fr/products/sk5-pruning-shears-red-silver')).text()).includes('Description française vérifiée.'));
+    assert.equal((await request('/api/admin/products', {method:'PUT',headers:admin,body:JSON.stringify([{...products[0],translations:{fr:{name:{bad:true}}}}])})).status,400);
+    const sitemapText=await(await request('/sitemap.xml')).text();
+    assert.ok(sitemapText.includes('/de/products/sk5-pruning-shears-red-silver'));
     const home = await (await request('/?product=test')).text();
     assert.match(home, /rel="canonical" href="https:\/\/edgevoratools.com\/?"/);
     assert.match(home, /Wholesale SK5 Pruning Shears \| Edgevora Tools/);

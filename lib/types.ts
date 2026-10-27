@@ -1,4 +1,5 @@
 export type Product = {
+  translations?: Partial<Record<"fr" | "de" | "es", { name?: string; description?: string }>>;
   id: string;
   name: string;
   category: string;

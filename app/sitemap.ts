@@ -1,3 +1,4 @@
+import { languages } from "@/lib/languages";
 import { productPath } from "@/lib/product-presentation";
 import type { MetadataRoute } from "next";
 import { getPublicProducts } from "@/lib/store";
@@ -16,6 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/oem`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/quality`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
+    ...languages.filter(item=>item.code!=="en").flatMap(item=>[{url:`${base}/${item.code}`,changeFrequency:"weekly" as const,priority:0.8},...products.map(product=>({url:`${base}/${item.code}${productPath(product)}`,changeFrequency:"monthly" as const,priority:0.7}))]),
     ...categories.map(category => ({ url: `${base}/categories/${categorySlug(category)}`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.9 })),
     ...products.map(product => ({ url: `${base}${productPath(product)}`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.8 })),
   ];
