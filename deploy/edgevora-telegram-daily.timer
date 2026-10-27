@@ -1,0 +1,10 @@
+[Unit]
+Description=Send yesterday's Edgevora report at 09:00 China time
+
+[Timer]
+OnCalendar=*-*-* 09:00:00 Asia/Shanghai
+Persistent=true
+Unit=edgevora-telegram-daily.service
+
+[Install]
+WantedBy=timers.target

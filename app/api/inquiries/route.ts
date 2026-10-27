@@ -1,3 +1,4 @@
+import { sendTelegram, inquiryTelegramText } from "@/lib/telegram.mjs";
 import { matchesFileType } from "@/lib/upload-validation";
 import { secureEndpoint, readForm } from "@/lib/request-security";
 import { NextResponse } from "next/server";
@@ -98,7 +99,10 @@ async function handlePOST(request: Request) {
   };
   await addInquiry(inquiry);
   await recordEvent({ type: "inquiry", visitor: clean(form.get("visitor")), page: inquiry.product, source: inquiry.utmSource || inquiry.source || "Direct", campaign: inquiry.utmCampaign || "", createdAt: inquiry.createdAt }).catch(console.error);
-  try { await notify(inquiry); } catch (error) { console.error("Inquiry email notification failed", error); }
+  await Promise.all([
+    notify(inquiry).catch(error => { console.error("Inquiry email notification failed", error); }),
+    sendTelegram(inquiryTelegramText(inquiry)).catch(() => { console.error("Inquiry Telegram notification failed; inquiry was saved. Check Telegram configuration/network."); }),
+  ]);
   return NextResponse.json({ ok: true });
 }
 

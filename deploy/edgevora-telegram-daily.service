@@ -1,0 +1,18 @@
+[Unit]
+Description=Edgevora Telegram daily summary
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/srv/edgevora/app
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/edgevora.env
+ExecStart=/usr/bin/node /srv/edgevora/app/scripts/telegram.mjs daily
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/srv/edgevora/data
+UMask=0077
+TimeoutStartSec=120
