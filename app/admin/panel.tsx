@@ -8,6 +8,7 @@ import InquiryCenter from "./inquiry-center";
 import ProductManager from "./product-manager";
 import type { DeploymentReadiness } from "./operations";
 import BrandingDetails from "./branding-details";
+import ShareImageManager from "./share-image-manager";
 import TrustDetails from "./trust-details";
 import { LogisticsManager, QuoteManager } from "./trade-tools";
 import CRM from "./crm";
@@ -43,6 +44,7 @@ export default function AdminPanel({ initialAuthed, initialProducts, inquiries, 
   {tab==="settings"&&<HeroVideoManager settings={settings} setSettings={setSettings}/>}
   {tab==="settings"&&<div className="settings-card tracking-settings"><h2>广告与访问统计</h2><p>留空不会加载对应平台。填写后自动记录页面浏览，并在客户提交询盘时发送转化事件。</p><div className="admin-grid"><label>Google Analytics 衡量 ID<input value={settings.googleAnalyticsId||""} onChange={e=>setSettings({...settings,googleAnalyticsId:e.target.value.trim()})} placeholder="G-XXXXXXXXXX"/></label><label>Meta Pixel ID<input value={settings.metaPixelId||""} onChange={e=>setSettings({...settings,metaPixelId:e.target.value.trim()})} placeholder="纯数字 Pixel ID"/></label><label>TikTok Pixel ID<input value={settings.tiktokPixelId||""} onChange={e=>setSettings({...settings,tiktokPixelId:e.target.value.trim()})} placeholder="例如 CXXXXXXXXXXXX"/></label></div></div>}
   {tab==="settings"&&<BrandingDetails settings={settings} setSettings={setSettings}/>}
+  {tab==="settings"&&<ShareImageManager settings={settings} setSettings={setSettings}/>}
   {tab==="settings"&&<TrustDetails settings={settings} setSettings={setSettings}/>}
   </section></main>;
 }

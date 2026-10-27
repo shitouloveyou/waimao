@@ -75,6 +75,7 @@ export type SiteSettings = {
   metaPixelId?: string;
   tiktokPixelId?: string;
   logo?: string;
+  homeShareImage?: string;
   legalName?: string;
   address?: string;
   businessHours?: string;

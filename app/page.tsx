@@ -10,8 +10,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const garden = isGardenCatalog(products);
   const title = garden ? "Wholesale SK5 Pruning Shears" : "Wholesale Cutting Tools";
   const description = garden ? "Explore SK5 garden pruning shears from Edgevora Tools. Request wholesale pricing, samples and packaging options for your market." : "Explore our current cutting tools and request wholesale pricing, samples and order details.";
-  const image = settings.heroImages?.[0] || settings.heroImage || products.find(product => product.image && product.image !== "/scissors-catalog.png")?.image;
-  return { title: { absolute: `${title} | ${settings.companyName}` }, description, alternates: { canonical: "/" }, openGraph: { title: `${title} | ${settings.companyName}`, description, images: image ? [image] : [] }, twitter: { card: "summary_large_image", title: `${title} | ${settings.companyName}`, description, images: image ? [image] : [] } };
+  const image = /^\/api\/uploads\/[a-f0-9-]+\.(jpg|png|webp)$/i.test(settings.homeShareImage || "") ? settings.homeShareImage! : "/share/home";
+  return { title: { absolute: `${title} | ${settings.companyName}` }, description, alternates: { canonical: "/" }, openGraph: { title: `${title} | ${settings.companyName}`, description, images: [{ url: image, alt: `${settings.companyName} — tools and hardware` }] }, twitter: { card: "summary_large_image", title: `${title} | ${settings.companyName}`, description, images: [{ url: image, alt: `${settings.companyName} — tools and hardware` }] } };
 }
 
 export default async function Home() {
