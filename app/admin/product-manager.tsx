@@ -11,8 +11,34 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
   const [status, setStatus] = useState("all");
   const [uploading, setUploading] = useState("");
   const [message, setMessage] = useState("");
-  const baseline = useRef(JSON.stringify(initialProducts));
-  const dirty = JSON.stringify(products) !== baseline.current;
+  const [baseline, setBaseline] = useState(JSON.stringify(initialProducts));
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [saveError, setSaveError] = useState("");
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftWarning, setDraftWarning] = useState("");
+  const [recovery, setRecovery] = useState<Product[] | null>(null);
+  const dirty = JSON.stringify(products) !== baseline;
+  const draftKey = "edgevora-products-draft-v1";
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (Array.isArray(draft.products) && draft.products.every((p: Product) => p && typeof p.id === "string" && typeof p.name === "string") && JSON.stringify(draft.products) !== baseline) setRecovery(draft.products);
+      }
+    } catch { setDraftWarning("无法读取本机草稿，请先导出产品 CSV 备份。"); }
+    setDraftReady(true);
+  }, []);
+  useEffect(() => {
+    if (!draftReady || recovery) return;
+    try {
+      if (dirty) localStorage.setItem(draftKey, JSON.stringify({ products, savedAt: Date.now() }));
+      else localStorage.removeItem(draftKey);
+      setDraftWarning("");
+    } catch { setDraftWarning("本机草稿保存失败，请导出产品 CSV 备份后再离开。"); }
+  }, [products, dirty, draftReady, recovery]);
   const visible = useMemo(() => products.map((product, index) => ({ product, index })).filter(({ product }) => {
     const matchesSearch = `${product.name} ${product.category} ${product.sku || ""}`.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = status === "all" || (status === "live" ? product.active !== false : product.active === false);
@@ -23,12 +49,59 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
   function move(index: number, direction: -1 | 1) { const target = index + direction; if (target < 0 || target >= products.length) return; setProducts(items => { const next = [...items]; [next[index], next[target]] = [next[target], next[index]]; return next; }); }
   function duplicate(index: number) { const source = products[index]; const copy = { ...source, id: `${source.id}-copy-${Date.now().toString().slice(-5)}`, name: `${source.name} Copy`, active: false, featured: false }; setProducts(items => [...items.slice(0, index + 1), copy, ...items.slice(index + 1)]); }
   function completeness(product: Product) { return Math.round([product.image, product.name, product.category, product.description, product.material, product.moq, product.model, product.size, product.applications, product.features, product.customization, product.leadTime].filter(Boolean).length / 12 * 100); }
-  async function save(next = products) { try { const response = await fetch("/api/admin/products", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next) }); if (!response.ok) throw new Error(); baseline.current = JSON.stringify(next); setMessage("产品资料已保存"); } catch { setMessage("保存失败，请检查登录状态并重试"); } }
-  async function upload(index: number, file?: File) { if (!file) return; setUploading(products[index].id); const data = new FormData(); data.append("image", file); const response = await fetch("/api/admin/upload", { method: "POST", body: data }); if (response.ok) { const { url } = await response.json(); const next = products.map((product, i) => i === index ? { ...product, image: url, imagePosition: undefined } : product); setProducts(next); await save(next); } else setMessage("图片上传失败，请使用不超过 5MB 的 JPG、PNG 或 WebP"); setUploading(""); }
-  async function uploadGallery(index: number, files: FileList | null) { if (!files?.length) return; const selected = Array.from(files).slice(0, Math.max(0, 6 - (products[index].images?.length || 0))); setUploading(`${products[index].id}-gallery`); const urls: string[] = []; for (const file of selected) { const data = new FormData(); data.append("image", file); const response = await fetch("/api/admin/upload", { method: "POST", body: data }); if (response.ok) urls.push((await response.json()).url); } const next = products.map((product, i) => i === index ? { ...product, images: [...(product.images || []), ...urls].slice(0, 6) } : product); setProducts(next); if (urls.length) await save(next); else setMessage("细节图上传失败，请检查图片格式和大小"); setUploading(""); }
+  async function save() {
+    if (savingRef.current || uploading || recovery) return;
+    savingRef.current = true;
+    setSaving(true); setSaveError(""); setMessage("");
+    const snapshot = JSON.stringify(products);
+    try {
+      const response = await fetch("/api/admin/products", { method: "PUT", headers: { "Content-Type": "application/json" }, body: snapshot, redirect: "error", signal: AbortSignal.timeout(30000) });
+      const result = response.headers.get("content-type")?.includes("application/json") ? await response.json() : null;
+      if (!response.ok || result?.ok !== true) {
+        const reason = response.status === 401 || response.status === 403 ? "登录已失效，请在新标签页重新登录后重试" : response.status === 413 ? "产品资料过大，服务器拒绝保存" : result?.error === "Invalid products" ? "产品资料校验失败，请检查必填字段、重复编号及过长文本" : result?.error || "服务器未确认保存成功，请检查登录状态";
+        throw new Error(reason);
+      }
+      setBaseline(snapshot);
+      setMessage(`服务器已确认保存 · ${new Date().toLocaleTimeString()}`);
+    } catch (error) {
+      setSaveError(`保存未确认成功：${error instanceof Error ? error.message : "网络异常"}。请勿关闭页面，可重试或导出备份。`);
+    } finally { savingRef.current = false; setSaving(false); }
+  }
+  async function uploadFile(file: File) {
+    const data = new FormData(); data.append("image", file);
+    const response = await fetch("/api/admin/upload", { method: "POST", body: data, redirect: "error", signal: AbortSignal.timeout(60000) });
+    const result = response.headers.get("content-type")?.includes("application/json") ? await response.json() : null;
+    if (!response.ok || typeof result?.url !== "string" || !result.url.startsWith("/api/uploads/")) throw new Error("图片上传失败，请检查登录状态、网络及图片大小（最大 5MB）");
+    return result.url as string;
+  }
+  async function upload(index: number, file?: File) {
+    if (!file || uploading) return;
+    const id = products[index].id;
+    setUploading(id); setMessage("");
+    try {
+      const url = await uploadFile(file);
+      setProducts(items => items.map(product => product.id === id ? { ...product, image: url, imagePosition: undefined } : product));
+      setMessage("主图已上传，请点击保存全部，将图片和文字一起保存。");
+    } catch (error) { setSaveError(error instanceof Error ? error.message : "图片上传失败"); }
+    finally { setUploading(""); }
+  }
+  async function uploadGallery(index: number, files: FileList | null) {
+    if (!files?.length || uploading) return;
+    const id = products[index].id;
+    const selected = Array.from(files).slice(0, Math.max(0, 6 - (products[index].images?.length || 0)));
+    setUploading(`${id}-gallery`); setMessage("");
+    try {
+      for (const file of selected) {
+        const url = await uploadFile(file);
+        setProducts(items => items.map(product => product.id === id ? { ...product, images: [...(product.images || []), url].slice(0, 6) } : product));
+      }
+      setMessage("细节图已上传，请点击保存全部，将图片和文字一起保存。");
+    } catch (error) { setSaveError(`${error instanceof Error ? error.message : "上传失败"}；已上传的图片保留在当前草稿中。`); }
+    finally { setUploading(""); }
+  }
   function add() { setProducts(items => [...items, { id: `product-${Date.now()}`, name: "New Hardware Product", category: "Hardware", material: "", price: "Request quote", moq: "", status: "Request Quote", description: "", active: false, featured: false }]); }
 
-  useEffect(() => { const warn = (event: BeforeUnloadEvent) => { if (dirty) event.preventDefault(); }; addEventListener("beforeunload", warn); return () => removeEventListener("beforeunload", warn); }, [dirty]);
+  useEffect(() => { const warn = (event: BeforeUnloadEvent) => { if (dirty || saving || uploading) { event.preventDefault(); event.returnValue = ""; } }; addEventListener("beforeunload", warn); return () => removeEventListener("beforeunload", warn); }, [dirty, saving, uploading]);
 
   const csvFields: (keyof Product)[] = ["id", "sku", "name", "category", "model", "material", "size", "blade", "price", "moq", "status", "packaging", "certification", "leadTime", "videoUrl", "description", "applications", "features", "customization", "specifications", "seoTitle", "seoDescription", "imageAlt", "image", "active", "featured"];
   const escapeCsv = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
@@ -37,9 +110,17 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
   async function importCsv(file?: File) { if (!file) return; const rows = parseCsv((await file.text()).replace(/^\uFEFF/, "")); const headers = rows.shift()?.map(value => value.trim()) || []; if (!headers.includes("name") || !headers.includes("category")) return setMessage("导入失败：CSV 必须包含 name 和 category 列"); const imported = rows.map((row, index) => { const values = Object.fromEntries(headers.map((header, i) => [header, row[i] || ""])); return { ...values, id: values.id || `product-${Date.now()}-${index}`, name: values.name, category: values.category, material: values.material || "", price: values.price || "Request quote", moq: values.moq || "", status: (["In Stock", "Made to Order", "Request Quote"].includes(values.status) ? values.status : "Request Quote") as Product["status"], description: values.description || "", active: values.active === "true", featured: values.featured === "true" } as Product; }).filter(product => product.name); if (!imported.length) return setMessage("没有找到可导入的产品"); if (!confirm(`将用 CSV 中的 ${imported.length} 个产品替换当前产品列表，确定继续吗？`)) return; setProducts(imported); setMessage("CSV 已读取，请检查后点击“保存全部”才会正式生效"); }
 
   return <div className="product-manager">
-    <header><div><small>PRODUCT MANAGEMENT</small><h1>剪刀与五金产品库</h1><p>支持剪刀、手工具、园林工具、紧固件及其他五金；新产品完成资料后再上架。</p></div><div><a className="backup-download" href="/api/admin/backup"><Download /> 全站备份</a><button className="add" onClick={exportCsv}><Download /> 产品 CSV</button><label className="product-import"><FileUp /> 导入 CSV<input type="file" accept=".csv,text/csv" onChange={event => importCsv(event.target.files?.[0])} /></label><button className="add" onClick={add}><Plus /> 添加产品</button><button className="save" onClick={() => save()}><Save /> {dirty ? "保存全部 *" : "已保存"}</button></div></header>
+    <header><div><small>PRODUCT MANAGEMENT</small><h1>剪刀与五金产品库</h1><p>支持剪刀、手工具、园林工具、紧固件及其他五金；新产品完成资料后再上架。</p></div><div><a className="backup-download" href="/api/admin/backup"><Download /> 全站备份</a><button className="add" onClick={exportCsv}><Download /> 产品 CSV</button><label className="product-import"><FileUp /> 导入 CSV<input type="file" accept=".csv,text/csv" onChange={event => importCsv(event.target.files?.[0])} /></label><button className="add" onClick={add}><Plus /> 添加产品</button><button className="save" disabled={saving || Boolean(uploading) || Boolean(recovery)} onClick={() => save()}><Save /> {saving ? "正在保存，请稍候…" : uploading ? "图片上传中…" : dirty ? "保存全部（未保存）" : "已保存"}</button></div></header>
     <div className="product-tools"><input value={search} onChange={event => setSearch(event.target.value)} placeholder="搜索产品名称、分类或 SKU" /><select value={status} onChange={event => setStatus(event.target.value)}><option value="all">全部产品</option><option value="live">已上架</option><option value="draft">已下架</option></select><span>共 {products.length} 个 · 上架 {products.filter(product => product.active !== false).length} 个</span></div>
-    {message && <p className="admin-notice" role="status">{message}</p>}
+    <div style={{ position: "sticky", top: 0, zIndex: 20, background: "#fff", padding: "12px", border: "1px solid #ddd" }} aria-live="polite">
+      <strong>{saving ? "正在保存到服务器，请勿刷新…" : dirty ? "有修改尚未保存到服务器" : "当前资料与已确认保存版本一致"}</strong>
+      {dirty && !saving && <button className="save" disabled={Boolean(uploading) || Boolean(recovery)} onClick={() => save()} style={{ marginLeft: 16 }}>保存全部</button>}
+      {dirty && !draftWarning && draftReady && !recovery && <p>已保留本机草稿；草稿不等于网站已更新。</p>}
+      {saveError && <p role="alert" style={{ color: "#a12620", fontWeight: 700 }}>{saveError}</p>}
+      {draftWarning && <p role="alert">{draftWarning}</p>}
+      {message && !(dirty && message.startsWith("服务器已确认")) && <p>{message}</p>}
+      {recovery && <div><p>发现上次未保存的本机草稿。恢复后请核对，再保存到服务器。</p><button onClick={() => { setProducts(recovery); setRecovery(null); setMessage(""); }}>恢复草稿</button> <button onClick={() => { if (confirm("确定放弃本机草稿，使用服务器资料？")) setRecovery(null); }}>放弃草稿</button></div>}
+    </div>
     <div className="admin-products">{visible.map(({ product: p, index: i }) => <article key={p.id}>
       <div className="admin-card-head"><div><b>产品 {String(i + 1).padStart(2, "0")} · {p.name}</b><span className={`publish-badge ${p.active === false ? "draft" : "live"}`}>{p.active === false ? "已下架" : "已上架"}</span><small>资料完整度 {completeness(p)}%</small></div><div className="product-card-actions"><button title="上移" disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp /></button><button title="下移" disabled={i === products.length - 1} onClick={() => move(i, 1)}><ArrowDown /></button><button title="复制" onClick={() => duplicate(i)}><Copy /></button><button title="删除" onClick={() => confirm(`确定删除 ${p.name}？`) && setProducts(items => items.filter((_, n) => n !== i))}><Trash2 /></button></div></div>
       <div className="product-publish-controls"><label><input type="checkbox" checked={p.active !== false} onChange={event => update(i, "active", event.target.checked)} /> 在前台展示</label><label><input type="checkbox" checked={Boolean(p.featured)} onChange={event => update(i, "featured", event.target.checked)} /><Star /> 首页优先推荐</label>{p.active !== false && <a href={`/products/${p.id}`} target="_blank"><Eye /> 预览详情页</a>}</div>
